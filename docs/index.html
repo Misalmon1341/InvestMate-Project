@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="Invesmate - Aprende a invertir sin riesgos">
+    <title>Invesmate</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <!-- PANTALLA DE INTRODUCCIÓN -->
+    <section id="intro-screen" class="screen active">
+        <div class="intro-content">
+            <div class="logo-container">
+                <div class="logo-placeholder">INVESMATE</div>
+            </div>
+            <h1 class="intro-title">Aprende a Invertir Sin Riesgos</h1>
+            <p class="intro-description">
+                Bienvenido a tu plataforma de simulación de inversiones.
+                Aquí podrás aprender sobre el mundo financiero usando dinero ficticio,
+                sin poner en riesgo tu patrimonio.
+            </p>
+            <div class="intro-features">
+                <div class="feature-item">
+                    <span class="feature-icon">📈</span>
+                    <span>Compra y vende acciones</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">💰</span>
+                    <span>Explora ETFs y Criptomonedas</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🏆</span>
+                    <span>Completa misiones y gana recompensas</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📚</span>
+                    <span>Aprende conceptos financieros</span>
+                </div>
+            </div>
+            <button class="btn-primary btn-large" onclick="app.navigate('login-screen')">Comenzar</button>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE LOGIN -->
+    <section id="login-screen" class="screen">
+        <div class="auth-container">
+            <button class="btn-back" onclick="app.navigate('intro-screen')">← Volver</button>
+            <div class="logo-small">INVESMATE</div>
+            <h2 class="auth-title">Iniciar Sesión</h2>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-username">Nombre de usuario</label>
+                    <input type="text" id="login-username" required placeholder="Tu nombre de usuario">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" required placeholder="Tu contraseña">
+                </div>
+                <button type="submit" class="btn-primary btn-large">Entrar</button>
+            </form>
+            <p class="auth-switch">
+                ¿No tienes cuenta?
+                <a href="#" onclick="app.navigate('signup-screen'); return false;">Regístrate</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE REGISTRO -->
+    <section id="signup-screen" class="screen">
+        <div class="auth-container">
+            <button class="btn-back" onclick="app.navigate('login-screen')">← Volver</button>
+            <div class="logo-small">INVESMATE</div>
+            <h2 class="auth-title">Crear Cuenta</h2>
+            <form id="signup-form" class="auth-form">
+                <div class="form-group">
+                    <label for="signup-username">Nombre de usuario</label>
+                    <input type="text" id="signup-username" required placeholder="Elige un nombre de usuario">
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Contraseña</label>
+                    <input type="password" id="signup-password" required placeholder="Crea una contraseña">
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm">Confirmar contraseña</label>
+                    <input type="password" id="signup-confirm" required placeholder="Confirma tu contraseña">
+                </div>
+                <button type="submit" class="btn-primary btn-large">Registrarse</button>
+            </form>
+            <p class="auth-switch">
+                ¿Ya tienes cuenta?
+                <a href="#" onclick="app.navigate('login-screen'); return false;">Inicia sesión</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- MENÚ PRINCIPAL -->
+    <section id="main-menu-screen" class="screen">
+        <header class="main-header">
+            <div class="header-left">
+                <div class="logo-small">INVESMATE</div>
+            </div>
+            <div class="header-right">
+                <button class="btn-icon" onclick="app.navigate('profile-screen')">
+                    <span class="icon">👤</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="menu-container">
+            <div class="welcome-banner">
+                <h2 id="welcome-user">¡Hola, Usuario!</h2>
+                <p class="balance-preview">Saldo: $<span id="menu-balance">10,000</span></p>
+            </div>
+
+            <nav class="main-nav">
+                <button class="menu-item menu-invest" onclick="app.navigate('invest-menu-screen')">
+                    <span class="menu-icon">📊</span>
+                    <span class="menu-label">Invertir</span>
+                </button>
+                <button class="menu-item menu-missions" onclick="app.navigate('missions-screen')">
+                    <span class="menu-icon">🎯</span>
+                    <span class="menu-label">Misiones</span>
+                </button>
+                <button class="menu-item menu-learning" onclick="app.navigate('learning-screen')">
+                    <span class="menu-icon">📚</span>
+                    <span class="menu-label">Aprendizaje</span>
+                </button>
+                <button class="menu-item menu-achievements" onclick="app.navigate('achievements-screen')">
+                    <span class="menu-icon">🏆</span>
+                    <span class="menu-label">Logros</span>
+                </button>
+            </nav>
+
+            <button class="btn-revolut" onclick="app.openRevolut()">
+                <span>Visitar Revolut</span>
+                <span class="external-icon">↗</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE PERFIL -->
+    <section id="profile-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('main-menu-screen')">← Volver</button>
+            <h1>Mi Perfil</h1>
+        </header>
+
+        <div class="profile-container">
+            <div class="profile-avatar">
+                <span class="avatar-icon">👤</span>
+            </div>
+            <h2 id="profile-username" class="profile-name">Usuario</h2>
+            <p class="profile-member">Miembro desde <span id="profile-join-date">-</span></p>
+
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-balance">$10,000</span>
+                    <span class="stat-label">Saldo Disponible</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-portfolio">$0</span>
+                    <span class="stat-label">En Portafolio</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-missions">0</span>
+                    <span class="stat-label">Misiones</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-achievements">0</span>
+                    <span class="stat-label">Logros</span>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <button class="btn-secondary btn-large" onclick="app.navigate('main-menu-screen')">
+                    Menú Principal
+                </button>
+                <button class="btn-danger btn-large" onclick="app.logout()">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- MENÚ DE INVERSIÓN -->
+    <section id="invest-menu-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('main-menu-screen')">← Volver</button>
+            <h1>Invertir</h1>
+        </header>
+
+        <div class="invest-container">
+            <div class="portfolio-summary">
+                <h3>Mi Portafolio</h3>
+                <p class="portfolio-total">Total: $<span id="portfolio-total">0</span></p>
+            </div>
+
+            <nav class="invest-nav">
+                <button class="invest-item" onclick="app.navigate('portfolio-screen')">
+                    <span class="invest-icon">💼</span>
+                    <div class="invest-info">
+                        <span class="invest-label">Cartera</span>
+                        <span class="invest-desc">Ver tus activos</span>
+                    </div>
+                </button>
+                <button class="invest-item" onclick="app.navigate('products-screen')">
+                    <span class="invest-icon">🛒</span>
+                    <div class="invest-info">
+                        <span class="invest-label">Productos</span>
+                        <span class="invest-desc">Explora para invertir</span>
+                    </div>
+                </button>
+            </nav>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE CARTERA -->
+    <section id="portfolio-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('invest-menu-screen')">← Volver</button>
+            <h1>Mi Cartera</h1>
+        </header>
+
+        <div class="portfolio-container">
+            <div id="portfolio-empty" class="empty-state">
+                <span class="empty-icon">💼</span>
+                <p>No tienes activos aún</p>
+                <button class="btn-primary" onclick="app.navigate('products-screen')">Explorar Productos</button>
+            </div>
+
+            <div id="portfolio-list" class="asset-list" style="display: none;">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE PRODUCTOS -->
+    <section id="products-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('invest-menu-screen')">← Volver</button>
+            <h1>Productos</h1>
+        </header>
+
+        <div class="products-container">
+            <div class="category-tabs">
+                <button class="tab-btn active" data-category="all" onclick="app.filterProducts('all')">Todos</button>
+                <button class="tab-btn" data-category="stocks" onclick="app.filterProducts('stocks')">Acciones</button>
+                <button class="tab-btn" data-category="etfs" onclick="app.filterProducts('etfs')">ETFs</button>
+                <button class="tab-btn" data-category="crypto" onclick="app.filterProducts('crypto')">Crypto</button>
+            </div>
+
+            <div id="products-list" class="products-list">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE DETALLE DE PRODUCTO -->
+    <section id="product-detail-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('products-screen')">← Volver</button>
+            <h1 id="detail-title">Producto</h1>
+        </header>
+
+        <div class="product-detail-container">
+            <div class="detail-header">
+                <h2 id="detail-name">Nombre</h2>
+                <p id="detail-symbol" class="detail-symbol">SYM</p>
+            </div>
+
+            <div class="detail-stats">
+                <div class="detail-stat">
+                    <span class="detail-stat-label">Precio</span>
+                    <span class="detail-stat-value" id="detail-price">$0.00</span>
+                </div>
+                <div class="detail-stat">
+                    <span class="detail-stat-label">Variación 24h</span>
+                    <span class="detail-stat-value" id="detail-change">0.00%</span>
+                </div>
+            </div>
+
+            <div class="detail-chart">
+                <canvas id="price-chart"></canvas>
+            </div>
+
+            <div class="purchase-section">
+                <h3>Comprar</h3>
+                <div class="purchase-input">
+                    <label>Cantidad ($)</label>
+                    <input type="number" id="purchase-amount" placeholder="0.00" min="1">
+                </div>
+                <p class="available-balance">Disponible: $<span id="available-balance">10,000</span></p>
+                <button class="btn-primary btn-large" onclick="app.confirmPurchase()">Confirmar Compra</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE MISIONES -->
+    <section id="missions-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('main-menu-screen')">← Volver</button>
+            <h1>Misiones</h1>
+        </header>
+
+        <div class="missions-container">
+            <div class="missions-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="missions-progress-fill" style="width: 0%"></div>
+                </div>
+                <p><span id="missions-completed">0</span> de <span id="missions-total">0</span> completadas</p>
+            </div>
+
+            <div id="missions-list" class="missions-list">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </section>
+
+    <!-- DETALLE DE MISIÓN -->
+    <section id="mission-detail-screen" class="screen modal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="app.closeModal()">✕</button>
+            <h2 id="mission-detail-title">Título de la Misión</h2>
+            <p id="mission-detail-description">Descripción de la misión</p>
+            <div class="mission-reward">
+                <span class="reward-icon">💰</span>
+                <span>Recompensa: $<span id="mission-reward-amount">0</span></span>
+            </div>
+            <button id="mission-action-btn" class="btn-primary btn-large" onclick="app.completeMission()">Comenzar</button>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE APRENDIZAJE -->
+    <section id="learning-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('main-menu-screen')">← Volver</button>
+            <h1>Aprendizaje</h1>
+        </header>
+
+        <div class="learning-container">
+            <div class="learning-tabs">
+                <button class="tab-btn active" data-section="concepts" onclick="app.showLearningSection('concepts')">Conceptos</button>
+                <button class="tab-btn" data-section="tips" onclick="app.showLearningSection('tips')">Recomendaciones</button>
+                <button class="tab-btn" data-section="mistakes" onclick="app.showLearningSection('mistakes')">Errores Comunes</button>
+            </div>
+
+            <div id="learning-content" class="learning-content">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE LOGROS -->
+    <section id="achievements-screen" class="screen">
+        <header class="screen-header">
+            <button class="btn-back" onclick="app.navigate('main-menu-screen')">← Volver</button>
+            <h1>Logros e Insignias</h1>
+        </header>
+
+        <div class="achievements-container">
+            <div class="achievements-summary">
+                <span class="achievement-count"><span id="achievements-count">0</span> desbloqueadas</span>
+            </div>
+
+            <div id="achievements-list" class="achievements-list">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL DE CONFIRMACIÓN DE COMPRA -->
+    <section id="purchase-modal" class="screen modal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="app.closeModal()">✕</button>
+            <h2>Confirmar Compra</h2>
+            <div class="purchase-summary">
+                <p>Producto: <strong id="confirm-product">-</strong></p>
+                <p>Cantidad: <strong id="confirm-amount">$0</strong></p>
+                <p>Saldo restante: <strong id="confirm-balance">$0</strong></p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="app.closeModal()">Cancelar</button>
+                <button class="btn-primary" onclick="app.executePurchase()">Confirmar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- NOTIFICACIÓN TOAST -->
+    <div id="toast" class="toast"></div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
