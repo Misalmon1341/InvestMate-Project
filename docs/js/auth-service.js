@@ -1,0 +1,249 @@
+/**
+ * Servicio de Autenticación con Supabase
+ * Maneja registro, login, logout y sesión de usuarios
+ */
+
+import { supabase, isConnected } from './supabase-client.js';
+
+export const authService = {
+    /**
+     * Registrar nuevo usuario
+     * @param {string} username - Nombre de usuario
+     * @param {string} email - Email (opcional, puede ser username@invesmate.local)
+     * @param {string} password - Contraseña
+     */
+    async signup(username, password) {
+        if (!isConnected) {
+            // Fallback a localStorage
+            return this._signupLocal(username, password);
+        }
+
+        try {
+            // Generar email ficticio si no se proporciona
+            const email = `${username.replace(/\s/g, '.').toLowerCase()}@invesmate.local`;
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        username: username
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            // El trigger en Supabase creará el perfil automáticamente
+            return {
+                success: true,
+                user: {
+                    id: data.user.id,
+                    username: username,
+                    email: email
+                }
+            };
+        } catch (error) {
+            console.error('Error en signup:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    },
+
+    /**
+     * Iniciar sesión
+     * @param {string} username - Nombre de usuario
+     * @param {string} password - Contraseña
+     */
+    async login(username, password) {
+        if (!isConnected) {
+            return this._loginLocal(username, password);
+        }
+
+        try {
+            // Convertir username a email
+            const email = `${username.replace(/\s/g, '.').toLowerCase()}@invesmate.local`;
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) throw error;
+
+            // Obtener perfil del usuario
+            const profile = await this.getUserProfile(data.user.id);
+
+            return {
+                success: true,
+                user: {
+                    id: data.user.id,
+                    username: profile?.username || username,
+                    email: email,
+                    balance: profile?.balance || 10000,
+                    joinDate: profile?.created_at || new Date().toISOString()
+                }
+            };
+        } catch (error) {
+            console.error('Error en login:', error);
+            return {
+                success: false,
+                error: this._mapAuthError(error)
+            };
+        }
+    },
+
+    /**
+     * Cerrar sesión
+     */
+    async logout() {
+        if (!isConnected) {
+            localStorage.removeItem('invesmate_current');
+            return { success: true };
+        }
+
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error en logout:', error);
+            return { success: false, error: error.message };
+        }
+
+        return { success: true };
+    },
+
+    /**
+     * Obtener perfil de usuario desde la base de datos
+     */
+    async getUserProfile(userId) {
+        if (!isConnected) return null;
+
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Error obteniendo perfil:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Actualizar balance del usuario
+     */
+    async updateBalance(userId, newBalance) {
+        if (!isConnected) {
+            localStorage.setItem('invesmate_balance', JSON.stringify(newBalance));
+            return { success: true };
+        }
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ balance: newBalance })
+                .eq('id', userId);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('Error actualizando balance:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * Obtener sesión actual
+     */
+    async getSession() {
+        if (!isConnected) {
+            const current = localStorage.getItem('invesmate_current');
+            return current ? JSON.parse(current) : null;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        return session;
+    },
+
+    // ========================================
+    // MÉTODOS LOCALES (FALLBACK)
+    // ========================================
+    _signupLocal(username, password) {
+        const users = JSON.parse(localStorage.getItem('invesmate_users') || '[]');
+
+        if (users.find(u => u.username === username)) {
+            return {
+                success: false,
+                error: 'El usuario ya existe'
+            };
+        }
+
+        const newUser = {
+            id: `local_${Date.now()}`,
+            username,
+            password, // En prod real, NUNCA guardar password en claro
+            joinDate: new Date().toISOString(),
+            balance: 10000
+        };
+
+        users.push(newUser);
+        localStorage.setItem('invesmate_users', JSON.stringify(users));
+        localStorage.setItem('invesmate_current', JSON.stringify(newUser));
+
+        return {
+            success: true,
+            user: {
+                id: newUser.id,
+                username: newUser.username,
+                balance: newUser.balance,
+                joinDate: newUser.joinDate
+            }
+        };
+    },
+
+    _loginLocal(username, password) {
+        const users = JSON.parse(localStorage.getItem('invesmate_users') || '[]');
+        const user = users.find(u => u.username === username && u.password === password);
+
+        if (!user) {
+            return {
+                success: false,
+                error: 'Credenciales incorrectas'
+            };
+        }
+
+        localStorage.setItem('invesmate_current', JSON.stringify(user));
+
+        return {
+            success: true,
+            user: {
+                id: user.id,
+                username: user.username,
+                balance: user.balance || 10000,
+                joinDate: user.joinDate
+            }
+        };
+    },
+
+    _logoutLocal() {
+        localStorage.removeItem('invesmate_current');
+        return { success: true };
+    },
+
+    // Mapear errores de Supabase a mensajes amigables
+    _mapAuthError(error) {
+        const messages = {
+            'Invalid login credentials': 'Usuario o contraseña incorrectos',
+            'Email not confirmed': 'Email no confirmado',
+            'User already registered': 'El usuario ya está registrado',
+            'Weak password': 'Contraseña demasiado débil'
+        };
+
+        return messages[error.message] || error.message;
+    }
+};

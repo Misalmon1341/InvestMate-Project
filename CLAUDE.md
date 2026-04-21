@@ -8,60 +8,63 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**Frontend-only prototype** (early stage):
-- `docs/index.html` - Main HTML entry point
-- `docs/css/styles.css` - Styling
-- `docs/js/main.js` - Application logic
+**Frontend**: Mobile-first PWA (Progressive Web App)
+- `docs/index.html` - Main HTML entry point with all screens
+- `docs/css/styles.css` - Mobile-first responsive styling
+- `docs/js/main.js` - Core application logic
 
-**Planned 4-layer architecture** (from Invesmate.md):
-1. **Presentation Layer** - HTML/CSS/JS for UI and navigation
-2. **Logic Layer** - Frontend JS for simulation, validations, user state
-3. **Services Layer** - Backend for complex logic and API endpoints
-4. **Data Layer** - MongoDB/Firebase for users, investments, scores, achievements
+**Backend**: Supabase (PostgreSQL + Auth + Realtime)
+- `docs/js/supabase-client.js` - Supabase client configuration
+- `docs/js/auth-service.js` - Authentication service
+- `docs/js/portfolio-service.js` - Portfolio management
+- `docs/js/missions-service.js` - Missions and achievements
 
-## Core Modules
-
-- **User** - Login/registration, profile, balance
-- **Portfolio** - Fictitious balance, assets, transaction history
-- **Investment Simulation** - Buy/sell actions, price variations, P/L tracking
-- **Missions** - Task lists, progress tracking, rewards
-- **Challenges** - Challenges, scoring system
-- **Achievements** - Badges and recognition
-
-## Key User Flows
-
-1. App intro/context → Learning section → Explore sections → Start investing
-2. Browse products (stocks, ETFs, crypto) → Analyze → Purchase → Track portfolio
-3. Complete missions → Earn rewards → Progress feedback → Ready to invest
-
-## Resources
-
-- **Design**: [Figma UI/UX](https://www.figma.com/design/xXk8iFpmaaXRhpb0Ngbisn/Invesmate-UiLayout)
-- **Documentation**: `Invesmate.md` contains full conceptual spec, user stories, value proposition, and feature details
+**Data Layer** (Supabase tables):
+- `profiles` - User profiles with balance
+- `portfolio` - User asset holdings
+- `transactions` - Transaction history
+- `user_missions` - Mission progress
+- `user_achievements` - Unlocked achievements
 
 ## Development
 
 **Run locally:**
 ```bash
-# Using Node.js http-server
-npx http-server docs -p 8080
-
-# Or open directly
-open docs/index.html
+cd docs
+npm install
+npm run dev          # Vite dev server (port 3000)
+# OR
+npm run serve        # Simple http-server (port 8080)
 ```
 
-**Tech Stack:** Vanilla HTML5, CSS3, JavaScript (ES6+) - Mobile-first PWA
+**Tech Stack**: Vanilla HTML5, CSS3, JavaScript (ES6 modules), Supabase
 
-## Current State
+## Key Features Implemented
 
-v1.0 implemented:
-- Full mobile-first UI with 10+ screens
-- User authentication (localStorage)
-- Investment simulation with 16+ products (stocks, ETFs, crypto)
-- 8 missions with rewards system
-- 8 achievements/badges
-- Learning section with concepts, tips, and common mistakes
-- Simulated price fluctuations (auto-update every 30s)
-- PWA manifest for mobile installation
+- **Authentication**: Supabase Auth with localStorage fallback
+- **Investment Simulation**: 16+ products (stocks, ETFs, crypto) with real-time price updates
+- **Portfolio Management**: Buy/sell assets, track P/L
+- **Missions System**: 8 missions with monetary rewards
+- **Achievements**: 8 badges to unlock
+- **Learning Section**: Concepts, tips, and common mistakes
+- **PWA Ready**: Manifest.json for mobile installation
 
-**Pending:** Service worker for offline support, backend integration, real market data API
+## Configuration
+
+**Supabase Setup:**
+1. Create project at https://supabase.com
+2. Run SQL from `docs/SUPABASE_SETUP.md`
+3. Store credentials in localStorage or `.env`:
+   ```
+   VITE_SUPABASE_URL=https://xxx.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJ...
+   ```
+
+See `docs/CONFIGURACION_RAPIDA.md` for detailed setup instructions.
+
+## Resources
+
+- **Design**: [Figma UI/UX](https://www.figma.com/design/xXk8iFpmaaXRhpb0Ngbisn/Invesmate-UiLayout)
+- **Documentation**: `Invesmate.md` - Full conceptual spec
+- **Setup Guide**: `docs/SUPABASE_SETUP.md` - Database schema and RLS policies
+- **Quick Start**: `docs/CONFIGURACION_RAPIDA.md` - Step-by-step configuration
