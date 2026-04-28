@@ -3,13 +3,16 @@
  * Lógica principal de la aplicación
  */
 
+import { authService } from './auth-service.js';
+import { portfolioService } from './portfolio-service.js';
+
 const app = {
     // ========================================
     // ESTADO DE LA APLICACIÓN
     // ========================================
     state: {
         currentUser: null,
-        users: [],
+        currentUserId: null,
         balance: 10000,
         portfolio: [],
         missions: [],
@@ -104,13 +107,15 @@ const app = {
     // ========================================
     // INICIALIZACIÓN
     // ========================================
-    init() {
-        this.loadFromStorage();
+    async init() {
         this.setupEventListeners();
         this.updateSimulatedPrices();
 
         // Actualizar precios cada 30 segundos
         setInterval(() => this.updateSimulatedPrices(), 30000);
+
+        // Verificar sesión de Supabase
+        await this.checkAuthSession();
 
         if (this.state.currentUser) {
             this.navigate('main-menu-screen');
@@ -121,33 +126,41 @@ const app = {
     },
 
     // ========================================
-    // ALMACENAMIENTO LOCAL
+    // AUTENTICACIÓN CON SUPABASE
     // ========================================
-    saveToStorage() {
-        localStorage.setItem('invesmate_users', JSON.stringify(this.state.users));
-        localStorage.setItem('invesmate_current', JSON.stringify(this.state.currentUser));
-        localStorage.setItem('invesmate_balance', JSON.stringify(this.state.balance));
-        localStorage.setItem('invesmate_portfolio', JSON.stringify(this.state.portfolio));
-        localStorage.setItem('invesmate_missions', JSON.stringify(this.state.missions));
-        localStorage.setItem('invesmate_achievements', JSON.stringify(this.state.achievements));
+    async checkAuthSession() {
+        const session = await authService.getSession();
+        if (session?.user) {
+            // Obtener perfil desde Supabase
+            const profile = await authService.getUserProfile(session.user.id);
+            if (profile) {
+                this.state.currentUser = {
+                    id: profile.id,
+                    username: profile.username,
+                    balance: profile.balance || 10000
+                };
+                this.state.currentUserId = profile.id;
+                this.state.balance = profile.balance || 10000;
+
+                // Cargar portfolio y misiones desde Supabase
+                await this.loadUserData();
+            }
+        }
     },
 
-    loadFromStorage() {
-        const users = localStorage.getItem('invesmate_users');
-        const current = localStorage.getItem('invesmate_current');
-        const balance = localStorage.getItem('invesmate_balance');
-        const portfolio = localStorage.getItem('invesmate_portfolio');
-        const missions = localStorage.getItem('invesmate_missions');
-        const achievements = localStorage.getItem('invesmate_achievements');
+    async loadUserData() {
+        if (!this.state.currentUserId) return;
 
-        if (users) this.state.users = JSON.parse(users);
-        if (current) this.state.currentUser = JSON.parse(current);
-        if (balance) this.state.balance = JSON.parse(balance);
-        if (portfolio) this.state.portfolio = JSON.parse(portfolio);
-        if (missions) this.state.missions = JSON.parse(missions);
-        else this.state.missions = JSON.parse(JSON.stringify(this.missionsData));
-        if (achievements) this.state.achievements = JSON.parse(achievements);
-        else this.state.achievements = JSON.parse(JSON.stringify(this.achievementsData));
+        // Cargar portfolio
+        this.state.portfolio = await portfolioService.getPortfolio(this.state.currentUserId);
+
+        // Cargar misiones (usamos localStorage como fallback temporal)
+        const missions = localStorage.getItem('invesmate_missions');
+        this.state.missions = missions ? JSON.parse(missions) : JSON.parse(JSON.stringify(this.missionsData));
+
+        // Cargar logros
+        const achievements = localStorage.getItem('invesmate_achievements');
+        this.state.achievements = achievements ? JSON.parse(achievements) : JSON.parse(JSON.stringify(this.achievementsData));
     },
 
     // ========================================
@@ -198,29 +211,34 @@ const app = {
             this.login();
         });
 
-        document.getElementById('signup-form').addEventListener('submit', (e) => {
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            this.signup();
+            await this.signup();
         });
     },
 
-    login() {
+    async login() {
         const username = document.getElementById('login-username').value.trim();
         const password = document.getElementById('login-password').value;
 
-        const user = this.state.users.find(u => u.username === username && u.password === password);
+        const result = await authService.login(username, password);
 
-        if (user) {
-            this.state.currentUser = user;
-            this.saveToStorage();
-            this.showToast('¡Bienvenido de nuevo!', 'success');
+        if (result.success) {
+            this.state.currentUser = result.user;
+            this.state.currentUserId = result.user.id;
+            this.state.balance = result.user.balance || 10000;
+
+            // Cargar datos del usuario
+            await this.loadUserData();
+
+            this.showToast(`¡Bienvenido ${result.user.username}!`, 'success');
             this.navigate('main-menu-screen');
         } else {
-            this.showToast('Credenciales incorrectas', 'error');
+            this.showToast(result.error || 'Credenciales incorrectas', 'error');
         }
     },
 
-    signup() {
+    async signup() {
         const username = document.getElementById('signup-username').value.trim();
         const password = document.getElementById('signup-password').value;
         const confirm = document.getElementById('signup-confirm').value;
@@ -230,37 +248,34 @@ const app = {
             return;
         }
 
-        if (this.state.users.find(u => u.username === username)) {
-            this.showToast('El usuario ya existe', 'error');
-            return;
+        const result = await authService.signup(username, password);
+
+        if (result.success) {
+            this.state.currentUser = result.user;
+            this.state.currentUserId = result.user.id;
+            this.state.balance = 10000;
+            this.state.portfolio = [];
+
+            // Guardar misiones y logros iniciales en localStorage (fallback)
+            localStorage.setItem('invesmate_missions', JSON.stringify(this.missionsData));
+            localStorage.setItem('invesmate_achievements', JSON.stringify(this.achievementsData));
+
+            // Desbloquear primer logro
+            this.unlockAchievement(1);
+
+            this.showToast('¡Cuenta creada con éxito!', 'success');
+            this.navigate('main-menu-screen');
+        } else {
+            this.showToast(result.error || 'Error al crear cuenta', 'error');
         }
-
-        const newUser = {
-            username,
-            password,
-            joinDate: new Date().toISOString(),
-            balance: 10000,
-            portfolio: [],
-            missionsCompleted: 0,
-            achievementsUnlocked: 0
-        };
-
-        this.state.users.push(newUser);
-        this.state.currentUser = newUser;
-        this.state.balance = 10000;
-        this.state.portfolio = [];
-
-        // Desbloquear primer logro
-        this.unlockAchievement(1);
-
-        this.saveToStorage();
-        this.showToast('¡Cuenta creada con éxito!', 'success');
-        this.navigate('main-menu-screen');
     },
 
-    logout() {
+    async logout() {
+        await authService.logout();
         this.state.currentUser = null;
-        this.saveToStorage();
+        this.state.currentUserId = null;
+        this.state.balance = 10000;
+        this.state.portfolio = [];
         this.navigate('intro-screen');
         this.showToast('Sesión cerrada', 'info');
     },
@@ -283,12 +298,18 @@ const app = {
     updateProfile() {
         if (!this.state.currentUser) return;
 
-        const portfolioValue = this.state.portfolio.reduce((sum, item) => sum + item.value, 0);
+        // Calcular valor del portfolio con precios actuales
+        const portfolioValue = this.state.portfolio.reduce((sum, item) => {
+            const product = this.products.find(p => p.id === (item.product_id || item.id));
+            const currentPrice = product ? product.price : (item.avg_price || item.avgPrice || 0);
+            return sum + (item.shares * currentPrice);
+        }, 0);
+
         const missionsCompleted = this.state.missions.filter(m => m.completed).length;
         const achievementsUnlocked = this.state.achievements.filter(a => a.unlocked).length;
 
         document.getElementById('profile-username').textContent = this.state.currentUser.username;
-        document.getElementById('profile-join-date').textContent = new Date(this.state.currentUser.joinDate).toLocaleDateString();
+        document.getElementById('profile-join-date').textContent = '-';
         document.getElementById('stat-balance').textContent = `$${this.formatNumber(this.state.balance)}`;
         document.getElementById('stat-portfolio').textContent = `$${this.formatNumber(portfolioValue)}`;
         document.getElementById('stat-missions').textContent = missionsCompleted;
@@ -374,43 +395,46 @@ const app = {
         this.navigate('purchase-modal');
     },
 
-    executePurchase() {
+    async executePurchase() {
         const amount = parseFloat(document.getElementById('purchase-amount').value);
         const product = this.state.currentProduct;
 
-        // Actualizar saldo
-        this.state.balance -= amount;
-
-        // Agregar o actualizar en portafolio
-        const existing = this.state.portfolio.find(p => p.id === product.id);
-        if (existing) {
-            existing.value += amount;
-            existing.shares += amount / product.price;
-        } else {
-            this.state.portfolio.push({
-                id: product.id,
-                name: product.name,
-                symbol: product.symbol,
-                category: product.category,
-                value: amount,
-                shares: amount / product.price,
-                avgPrice: product.price
-            });
+        if (!this.state.currentUserId) {
+            this.showToast('Error: No hay usuario autenticado', 'error');
+            return;
         }
 
-        this.state.currentUser.balance = this.state.balance;
-        this.state.currentUser.portfolio = this.state.portfolio;
+        // Verificar saldo suficiente
+        if (amount > this.state.balance) {
+            this.showToast('Saldo insuficiente', 'error');
+            return;
+        }
 
-        this.saveToStorage();
-        this.closeModal();
-        this.showToast(`¡Compra de ${product.symbol} realizada!`, 'success');
+        // Ejecutar compra en Supabase
+        const result = await portfolioService.buyAsset(this.state.currentUserId, product, amount);
 
-        // Verificar misiones
-        this.checkMissions('purchase', product);
+        if (result.success) {
+            // Actualizar estado local
+            this.state.balance -= amount;
 
-        // Desbloquear logro de primera compra
-        if (this.state.portfolio.length === 1) {
-            this.unlockAchievement(2);
+            // Actualizar saldo en Supabase
+            await authService.updateBalance(this.state.currentUserId, this.state.balance);
+
+            // Recargar portfolio
+            await this.loadUserData();
+
+            this.closeModal();
+            this.showToast(`¡Compra de ${product.symbol} realizada!`, 'success');
+
+            // Verificar misiones
+            this.checkMissions('purchase', product);
+
+            // Desbloquear logro de primera compra
+            if (this.state.portfolio.length === 1) {
+                this.unlockAchievement(2);
+            }
+        } else {
+            this.showToast(result.error || 'Error en la compra', 'error');
         }
     },
 
@@ -427,20 +451,27 @@ const app = {
         emptyEl.style.display = 'none';
         listEl.style.display = 'flex';
 
-        const totalValue = this.state.portfolio.reduce((sum, item) => sum + item.value, 0);
+        // Calcular valor total usando precios actuales
+        const totalValue = this.state.portfolio.reduce((sum, item) => {
+            const product = this.products.find(p => p.id === item.product_id || p.id === item.id);
+            const currentPrice = product ? product.price : item.avg_price || item.avgPrice;
+            return sum + (item.shares * currentPrice);
+        }, 0);
+
         document.getElementById('portfolio-total').textContent = totalValue.toLocaleString('en-US', {minimumFractionDigits: 2});
 
         listEl.innerHTML = this.state.portfolio.map(asset => {
-            const product = this.products.find(p => p.id === asset.id);
-            const currentPrice = product ? product.price : asset.avgPrice;
+            const product = this.products.find(p => p.id === (asset.product_id || asset.id));
+            const currentPrice = product ? product.price : (asset.avg_price || asset.avgPrice);
             const currentValue = asset.shares * currentPrice;
-            const gainLoss = ((currentValue - asset.value) / asset.value) * 100;
+            const investedValue = asset.invested_value || asset.value || (asset.shares * (asset.avg_price || asset.avgPrice));
+            const gainLoss = investedValue > 0 ? ((currentValue - investedValue) / investedValue) * 100 : 0;
 
             return `
                 <div class="asset-item">
                     <div class="asset-info">
-                        <span class="asset-name">${asset.name}</span>
-                        <span class="asset-symbol">${asset.symbol} • ${asset.shares.toFixed(4)} acciones</span>
+                        <span class="asset-name">${asset.product_name || asset.name}</span>
+                        <span class="asset-symbol">${asset.product_symbol || asset.symbol} • ${asset.shares.toFixed(4)} acciones</span>
                     </div>
                     <div class="asset-value">
                         <span class="asset-price">$${currentValue.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
@@ -499,56 +530,70 @@ const app = {
         this.navigate('mission-detail-screen');
     },
 
-    completeMission() {
+    async completeMission() {
         if (!this.state.currentMission || this.state.currentMission.completed) return;
 
         this.state.currentMission.completed = true;
         this.state.balance += this.state.currentMission.reward;
-        this.state.currentUser.balance = this.state.balance;
 
-        this.saveToStorage();
+        // Actualizar en Supabase y localStorage
+        if (this.state.currentUserId) {
+            await authService.updateBalance(this.state.currentUserId, this.state.balance);
+        }
+        localStorage.setItem('invesmate_missions', JSON.stringify(this.state.missions));
+
         this.closeModal();
         this.showToast(`¡Misión completada! +$${this.state.currentMission.reward}`, 'success');
         this.renderMissions();
     },
 
-    checkMissions(actionType, product) {
+    async checkMissions(actionType, product) {
+        if (!this.state.currentUserId) return;
+
         // Misión: Primera inversión
         if (actionType === 'purchase' && this.state.portfolio.length === 1) {
-            this.completeMissionById(1);
+            await this.completeMissionById(1);
         }
 
         // Misión: Diversificador (3 activos diferentes)
         if (this.state.portfolio.length >= 3) {
-            this.completeMissionById(2);
+            await this.completeMissionById(2);
         }
 
         // Misión: Inversor ETF
         if (product && product.category === 'etfs') {
-            const hasETF = this.state.portfolio.some(p => p.category === 'etfs');
-            if (hasETF) this.completeMissionById(3);
+            const hasETF = this.state.portfolio.some(p => (p.product_category || p.category) === 'etfs');
+            if (hasETF) await this.completeMissionById(3);
         }
 
         // Misión: Cripto Entusiasta
         if (product && product.category === 'crypto') {
-            const hasCrypto = this.state.portfolio.some(p => p.category === 'crypto');
-            if (hasCrypto) this.completeMissionById(4);
+            const hasCrypto = this.state.portfolio.some(p => (p.product_category || p.category) === 'crypto');
+            if (hasCrypto) await this.completeMissionById(4);
         }
 
         // Misión: Portafolio de $1K
-        const portfolioValue = this.state.portfolio.reduce((sum, item) => sum + item.value, 0);
+        const portfolioValue = this.state.portfolio.reduce((sum, item) => {
+            const prod = this.products.find(p => p.id === (item.product_id || item.id));
+            return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
+        }, 0);
         if (portfolioValue >= 1000) {
-            this.completeMissionById(5);
+            await this.completeMissionById(5);
         }
     },
 
-    completeMissionById(id) {
+    async completeMissionById(id) {
         const mission = this.state.missions.find(m => m.id === id);
         if (mission && !mission.completed) {
             mission.completed = true;
             this.state.balance += mission.reward;
-            this.state.currentUser.balance = this.state.balance;
-            this.saveToStorage();
+
+            // Actualizar en Supabase
+            if (this.state.currentUserId) {
+                await authService.updateBalance(this.state.currentUserId, this.state.balance);
+            }
+            localStorage.setItem('invesmate_missions', JSON.stringify(this.state.missions));
+
             this.showToast(`¡Misión desbloqueada: ${mission.title}! +$${mission.reward}`, 'success');
         }
     },
@@ -560,8 +605,7 @@ const app = {
         const achievement = this.state.achievements.find(a => a.id === id);
         if (achievement && !achievement.unlocked) {
             achievement.unlocked = true;
-            this.state.currentUser.achievementsUnlocked++;
-            this.saveToStorage();
+            localStorage.setItem('invesmate_achievements', JSON.stringify(this.state.achievements));
             this.showToast(`¡Logro desbloqueado: ${achievement.name}!`, 'success');
         }
     },
@@ -617,13 +661,9 @@ const app = {
     // UTILIDADES
     // ========================================
     closeModal() {
-        const modals = document.querySelectorAll('.screen.modal');
-        modals.forEach(modal => modal.classList.remove('active'));
-
-        // Volver a la pantalla anterior
-        if (document.getElementById('purchase-modal').classList.contains('active')) {
-            // Ya está cerrado, no hacer nada
-        }
+        document.querySelectorAll('.screen.modal').forEach(modal => {
+            modal.classList.remove('active');
+        });
     },
 
     showToast(message, type = 'info') {
@@ -679,6 +719,9 @@ const app = {
         window.open('https://www.revolut.com', '_blank');
     }
 };
+
+// Exponer app globalmente para handlers onclick en HTML
+window.app = app;
 
 // Iniciar aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
