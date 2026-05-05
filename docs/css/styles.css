@@ -136,8 +136,30 @@ body {
     border-radius: var(--border-radius);
 }
 
-.feature-icon {
-    font-size: 1.5rem;
+.feature-icon,
+.menu-icon,
+.icon,
+.avatar-icon,
+.invest-icon,
+.empty-icon,
+.reward-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+    filter: brightness(0) invert(1);
+}
+
+/* Debug - mostrar si las imágenes cargan */
+img.feature-icon[src$=".svg"],
+img.menu-icon[src$=".svg"] {
+    content: "🖼️";
+}
+
+/* También asegurar visibility */
+.feature-item img.feature-icon {
+    min-width: 24px;
+    min-height: 24px;
 }
 
 /* ========================================
@@ -197,6 +219,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 8px;
+}
+
+.btn-icon .icon {
+    width: 24px;
+    height: 24px;
 }
 
 .btn-back {
@@ -401,7 +429,9 @@ body {
 }
 
 .menu-icon {
-    font-size: 2.5rem;
+    width: 40px;
+    height: 40px;
+    display: inline-block;
 }
 
 .menu-label {
@@ -449,10 +479,12 @@ body {
     align-items: center;
     justify-content: center;
     border: 3px solid var(--primary);
+    padding: 20px;
 }
 
 .avatar-icon {
-    font-size: 3rem;
+    width: 60px;
+    height: 60px;
 }
 
 .profile-name {
@@ -552,7 +584,10 @@ body {
 }
 
 .invest-icon {
-    font-size: 2.5rem;
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .invest-info {
@@ -586,7 +621,9 @@ body {
 }
 
 .empty-icon {
-    font-size: 4rem;
+    width: 64px;
+    height: 64px;
+    opacity: 0.5;
 }
 
 .empty-state p {
@@ -964,7 +1001,8 @@ body {
 }
 
 .reward-icon {
-    font-size: 1.5rem;
+    width: 24px;
+    height: 24px;
 }
 
 .modal-actions {

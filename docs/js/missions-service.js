@@ -7,26 +7,26 @@ import { supabase, isConnected } from './supabase-client.js';
 
 // Datos base de misiones
 const MISSIONS_DATA = [
-    { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: '🎯', type: 'first_purchase' },
-    { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: '📊', type: 'diversify' },
-    { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: '💎', type: 'first_etf' },
-    { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: '₿', type: 'first_crypto' },
-    { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: '💰', type: 'portfolio_1k' },
-    { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: '📚', type: 'read_articles' },
-    { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: '🏅', type: 'active_trader' },
+    { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: '✨', type: 'first_purchase' },
+    { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: '📈', type: 'diversify' },
+    { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: '💵', type: 'first_etf' },
+    { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: '🪙', type: 'first_crypto' },
+    { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: '💲', type: 'portfolio_1k' },
+    { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: '📖', type: 'read_articles' },
+    { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: '⚡', type: 'active_trader' },
     { id: 8, title: 'Maestro de Invesmate', description: 'Completa todas las misiones', reward: 5000, icon: '👑', type: 'all_missions' }
 ];
 
 // Datos base de logros
 const ACHIEVEMENTS_DATA = [
     { id: 1, name: 'Primeros Pasos', description: 'Completa tu registro', icon: '🌟' },
-    { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: '📈' },
-    { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: '🎨' },
-    { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: '💎🙌' },
+    { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: '💲' },
+    { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: '🔀' },
+    { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: '⏳' },
     { id: 5, name: 'Trader Activo', description: '20 operaciones realizadas', icon: '⚡' },
     { id: 6, name: 'Estudiante', description: 'Completa el aprendizaje', icon: '🎓' },
-    { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: '💰' },
-    { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: '🏆' }
+    { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: '💵' },
+    { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: '🏅' }
 ];
 
 export const missionsService = {

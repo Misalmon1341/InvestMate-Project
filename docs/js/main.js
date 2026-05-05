@@ -52,13 +52,13 @@ const app = {
     // MISIONES DISPONIBLES
     // ========================================
     missionsData: [
-        { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: '🎯', completed: false, type: 'first_purchase' },
-        { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: '📊', completed: false, type: 'diversify' },
-        { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: '💎', completed: false, type: 'first_etf' },
-        { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: '₿', completed: false, type: 'first_crypto' },
-        { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: '💰', completed: false, type: 'portfolio_1k' },
-        { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: '📚', completed: false, type: 'read_articles' },
-        { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: '🏅', completed: false, type: 'active_trader' },
+        { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: '✨', completed: false, type: 'first_purchase' },
+        { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: '📈', completed: false, type: 'diversify' },
+        { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: '💵', completed: false, type: 'first_etf' },
+        { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: '🪙', completed: false, type: 'first_crypto' },
+        { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: '💲', completed: false, type: 'portfolio_1k' },
+        { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: '📖', completed: false, type: 'read_articles' },
+        { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: '⚡', completed: false, type: 'active_trader' },
         { id: 8, title: 'Maestro de Invesmate', description: 'Completa todas las misiones', reward: 5000, icon: '👑', completed: false, type: 'all_missions' }
     ],
 
@@ -67,31 +67,31 @@ const app = {
     // ========================================
     achievementsData: [
         { id: 1, name: 'Primeros Pasos', description: 'Completa tu registro', icon: '🌟', unlocked: false },
-        { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: '📈', unlocked: false },
-        { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: '🎨', unlocked: false },
-        { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: '💎🙌', unlocked: false },
+        { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: '💲', unlocked: false },
+        { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: '🔀', unlocked: false },
+        { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: '⏳', unlocked: false },
         { id: 5, name: 'Trader Activo', description: '20 operaciones realizadas', icon: '⚡', unlocked: false },
         { id: 6, name: 'Estudiante', description: 'Completa el aprendizaje', icon: '🎓', unlocked: false },
-        { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: '💰', unlocked: false },
-        { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: '🏆', unlocked: false }
+        { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: '💵', unlocked: false },
+        { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: '🏅', unlocked: false }
     ],
 
-    // ========================================
+// ========================================
     // CONTENIDO DE APRENDIZAJE
     // ========================================
     learningContent: {
         concepts: [
-            { title: '¿Qué es una Acción?', content: 'Una acción representa una parte del capital de una empresa. Al comprar acciones, te conviertes en accionista y tienes derecho a participar en las ganancias de la compañía.', icon: '📊' },
+            { title: '¿Qué es una Acción?', content: 'Una acción representa una parte del capital de una empresa. Al comprar acciones, te conviertes en accionista y tienes derecho a participar en las ganancias de la compañía.', icon: '📈' },
             { title: '¿Qué es un ETF?', content: 'Un ETF (Exchange Traded Fund) es un fondo de inversión que cotiza en bolsa. Permite diversificar invirtiendo en múltiples activos simultáneamente.', icon: '💼' },
-            { title: 'Diversificación', content: 'Estrategia que consiste en distribuir las inversiones entre diferentes activos para reducir el riesgo. "No pongas todos los huevos en la misma canasta".', icon: '🎨' },
+            { title: 'Diversificación', content: 'Estrategia que consiste en distribuir las inversiones entre diferentes activos para reducir el riesgo. "No pongas todos los huevos en la misma canasta".', icon: '🔀' },
             { title: 'Riesgo y Rendimiento', content: 'Generalmente, a mayor potencial de rendimiento, mayor es el riesgo. Las inversiones seguras suelen ofrecer menores retornos.', icon: '⚖️' },
-            { title: 'Interés Compuesto', content: 'El interés compuesto es cuando las ganancias generadas por una inversión se reinvierten y generan más ganancias. Es la fuerza más poderosa en las finanzas.', icon: '📈' },
-            { title: 'Inflación', content: 'La inflación es el aumento generalizado de precios. Tu dinero pierde valor con el tiempo, por eso es importante invertir para superar la inflación.', icon: '💸' }
+            { title: 'Interés Compuesto', content: 'El interés compuesto es cuando las ganancias generadas por una inversión se reinvierten y generan más ganancias. Es la fuerza más poderosa en las finanzas.', icon: '📊' },
+            { title: 'Inflación', content: 'La inflación es el aumento generalizado de precios. Tu dinero pierde valor con el tiempo, por eso es importante invertir para superar la inflación.', icon: '📉' }
         ],
         tips: [
             { title: 'Empieza con poco', content: 'No necesitas grandes cantidades para comenzar. La clave es la constancia y el aprendizaje continuo.', icon: '🌱' },
             { title: 'Investiga antes de invertir', content: 'Nunca inviertas en algo que no entiendes. Estudia la empresa, el sector y las tendencias del mercado.', icon: '🔍' },
-            { title: 'Define tu estrategia', content: 'Decide si eres inversor a largo plazo o trader de corto plazo. Cada estrategia requiere diferentes habilidades y tiempo.', icon: '🎯' },
+            { title: 'Define tu estrategia', content: 'Decide si eres inversor a largo plazo o trader de corto plazo. Cada estrategia requiere diferentes habilidades y tiempo.', icon: '🎓' },
             { title: 'Mantén la calma', content: 'Los mercados fluctúan. No tomes decisiones impulsivas basadas en el miedo o la codicia.', icon: '🧘' },
             { title: 'Rebalancea tu portafolio', content: 'Periódicamente ajusta tu portafolio para mantener la distribución de activos que deseas.', icon: '🔄' }
         ],
@@ -100,7 +100,7 @@ const app = {
             { title: 'No diversificar', content: 'Concentrar todo en una sola inversión es muy arriesgado. Diversifica para proteger tu capital.', icon: '🚫' },
             { title: 'Seguir a la multitud', content: 'Comprar cuando todos compran y vender cuando todos venden suele ser una mala estrategia.', icon: '🐑' },
             { title: 'No tener paciencia', content: 'Las mejores inversiones requieren tiempo. El trading excesivo genera costos y errores.', icon: '⏰' },
-            { title: 'Ignorar las comisiones', content: 'Las comisiones pueden comer tus ganancias. Compara plataformas y elige la que mejor se adapte.', icon: '💰' }
+            { title: 'Ignorar las comisiones', content: 'Las comisiones pueden comer tus ganancias. Compara plataformas y elige la que mejor se adapte.', icon: '💲' }
         ]
     },
 
