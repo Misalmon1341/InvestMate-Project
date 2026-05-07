@@ -147,16 +147,8 @@ body {
     height: 24px;
     display: inline-block;
     vertical-align: middle;
-    filter: brightness(0) invert(1);
 }
 
-/* Debug - mostrar si las imágenes cargan */
-img.feature-icon[src$=".svg"],
-img.menu-icon[src$=".svg"] {
-    content: "🖼️";
-}
-
-/* También asegurar visibility */
 .feature-item img.feature-icon {
     min-width: 24px;
     min-height: 24px;
@@ -932,7 +924,9 @@ img.menu-icon[src$=".svg"] {
 }
 
 .mission-icon {
-    font-size: 2rem;
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
 }
 
 .mission-info {
@@ -1114,7 +1108,9 @@ img.menu-icon[src$=".svg"] {
 }
 
 .achievement-icon {
-    font-size: 2.5rem;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
 }
 
 .achievement-name {

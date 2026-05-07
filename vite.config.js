@@ -4,8 +4,9 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
 
     return {
+        root: 'docs',
         server: {
-            port: 5173,
+            port: 3000,
             open: false
         },
         define: {

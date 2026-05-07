@@ -5,6 +5,7 @@
 
 import { authService } from './auth-service.js';
 import { portfolioService } from './portfolio-service.js';
+import { missionsService } from './missions-service.js';
 
 const app = {
     // ========================================
@@ -18,7 +19,8 @@ const app = {
         missions: [],
         achievements: [],
         currentProduct: null,
-        currentMission: null
+        currentMission: null,
+        articlesRead: 0
     },
 
     // ========================================
@@ -52,28 +54,28 @@ const app = {
     // MISIONES DISPONIBLES
     // ========================================
     missionsData: [
-        { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: '✨', completed: false, type: 'first_purchase' },
-        { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: '📈', completed: false, type: 'diversify' },
-        { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: '💵', completed: false, type: 'first_etf' },
-        { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: '🪙', completed: false, type: 'first_crypto' },
-        { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: '💲', completed: false, type: 'portfolio_1k' },
-        { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: '📖', completed: false, type: 'read_articles' },
-        { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: '⚡', completed: false, type: 'active_trader' },
-        { id: 8, title: 'Maestro de Invesmate', description: 'Completa todas las misiones', reward: 5000, icon: '👑', completed: false, type: 'all_missions' }
+        { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg', completed: false, type: 'first_purchase' },
+        { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', completed: false, type: 'diversify' },
+        { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-barcode.svg', completed: false, type: 'first_etf' },
+        { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-bitcoin.svg', completed: false, type: 'first_crypto' },
+        { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', completed: false, type: 'portfolio_1k' },
+        { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-address-book.svg', completed: false, type: 'read_articles' },
+        { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', completed: false, type: 'active_trader' },
+        { id: 8, title: 'Maestro de Invesmate', description: 'Completa todas las misiones', reward: 5000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-treasure-chest.svg', completed: false, type: 'all_missions' }
     ],
 
     // ========================================
     // LOGROS / INSIGNIAS
     // ========================================
     achievementsData: [
-        { id: 1, name: 'Primeros Pasos', description: 'Completa tu registro', icon: '🌟', unlocked: false },
-        { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: '💲', unlocked: false },
-        { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: '🔀', unlocked: false },
-        { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: '⏳', unlocked: false },
-        { id: 5, name: 'Trader Activo', description: '20 operaciones realizadas', icon: '⚡', unlocked: false },
-        { id: 6, name: 'Estudiante', description: 'Completa el aprendizaje', icon: '🎓', unlocked: false },
-        { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: '💵', unlocked: false },
-        { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: '🏅', unlocked: false }
+        { id: 1, name: 'Primeros Pasos', description: 'Completa tu registro', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg', unlocked: false },
+        { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', unlocked: false },
+        { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', unlocked: false },
+        { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg', unlocked: false },
+        { id: 5, name: 'Trader Activo', description: '20 operaciones realizadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', unlocked: false },
+        { id: 6, name: 'Estudiante', description: 'Completa el aprendizaje', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-intellect.svg', unlocked: false },
+        { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle-stars.svg', unlocked: false },
+        { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-gem-alt.svg', unlocked: false }
     ],
 
 // ========================================
@@ -81,26 +83,26 @@ const app = {
     // ========================================
     learningContent: {
         concepts: [
-            { title: '¿Qué es una Acción?', content: 'Una acción representa una parte del capital de una empresa. Al comprar acciones, te conviertes en accionista y tienes derecho a participar en las ganancias de la compañía.', icon: '📈' },
-            { title: '¿Qué es un ETF?', content: 'Un ETF (Exchange Traded Fund) es un fondo de inversión que cotiza en bolsa. Permite diversificar invirtiendo en múltiples activos simultáneamente.', icon: '💼' },
-            { title: 'Diversificación', content: 'Estrategia que consiste en distribuir las inversiones entre diferentes activos para reducir el riesgo. "No pongas todos los huevos en la misma canasta".', icon: '🔀' },
-            { title: 'Riesgo y Rendimiento', content: 'Generalmente, a mayor potencial de rendimiento, mayor es el riesgo. Las inversiones seguras suelen ofrecer menores retornos.', icon: '⚖️' },
-            { title: 'Interés Compuesto', content: 'El interés compuesto es cuando las ganancias generadas por una inversión se reinvierten y generan más ganancias. Es la fuerza más poderosa en las finanzas.', icon: '📊' },
-            { title: 'Inflación', content: 'La inflación es el aumento generalizado de precios. Tu dinero pierde valor con el tiempo, por eso es importante invertir para superar la inflación.', icon: '📉' }
+            { title: '¿Qué es una Acción?', content: 'Una acción representa una parte del capital de una empresa. Al comprar acciones, te conviertes en accionista y tienes derecho a participar en las ganancias de la compañía.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-analyze.svg' },
+            { title: '¿Qué es un ETF?', content: 'Un ETF (Exchange Traded Fund) es un fondo de inversión que cotiza en bolsa. Permite diversificar invirtiendo en múltiples activos simultáneamente.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-briefcase-alt.svg' },
+            { title: 'Diversificación', content: 'Estrategia que consiste en distribuir las inversiones entre diferentes activos para reducir el riesgo. "No pongas todos los huevos en la misma canasta".', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg' },
+            { title: 'Riesgo y Rendimiento', content: 'Generalmente, a mayor potencial de rendimiento, mayor es el riesgo. Las inversiones seguras suelen ofrecer menores retornos.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-psychology.svg' },
+            { title: 'Interés Compuesto', content: 'El interés compuesto es cuando las ganancias generadas por una inversión se reinvierten y generan más ganancias. Es la fuerza más poderosa en las finanzas.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg' },
+            { title: 'Inflación', content: 'La inflación es el aumento generalizado de precios. Tu dinero pierde valor con el tiempo, por eso es importante invertir para superar la inflación.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-steps-down.svg' }
         ],
         tips: [
-            { title: 'Empieza con poco', content: 'No necesitas grandes cantidades para comenzar. La clave es la constancia y el aprendizaje continuo.', icon: '🌱' },
-            { title: 'Investiga antes de invertir', content: 'Nunca inviertas en algo que no entiendes. Estudia la empresa, el sector y las tendencias del mercado.', icon: '🔍' },
-            { title: 'Define tu estrategia', content: 'Decide si eres inversor a largo plazo o trader de corto plazo. Cada estrategia requiere diferentes habilidades y tiempo.', icon: '🎓' },
-            { title: 'Mantén la calma', content: 'Los mercados fluctúan. No tomes decisiones impulsivas basadas en el miedo o la codicia.', icon: '🧘' },
-            { title: 'Rebalancea tu portafolio', content: 'Periódicamente ajusta tu portafolio para mantener la distribución de activos que deseas.', icon: '🔄' }
+            { title: 'Empieza con poco', content: 'No necesitas grandes cantidades para comenzar. La clave es la constancia y el aprendizaje continuo.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-home-alt.svg' },
+            { title: 'Investiga antes de invertir', content: 'Nunca inviertas en algo que no entiendes. Estudia la empresa, el sector y las tendencias del mercado.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-search-alt.svg' },
+            { title: 'Define tu estrategia', content: 'Decide si eres inversor a largo plazo o trader de corto plazo. Cada estrategia requiere diferentes habilidades y tiempo.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-cog.svg' },
+            { title: 'Mantén la calma', content: 'Los mercados fluctúan. No tomes decisiones impulsivas basadas en el miedo o la codicia.', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg' },
+            { title: 'Rebalancea tu portafolio', content: 'Periódicamente ajusta tu portafolio para mantener la distribución de activos que deseas.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-archive-arrow-up.svg' }
         ],
         mistakes: [
-            { title: 'Invertir sin conocimiento', content: 'El error más común es invertir sin entender el activo. Siempre educa antes de invertir.', icon: '⚠️' },
-            { title: 'No diversificar', content: 'Concentrar todo en una sola inversión es muy arriesgado. Diversifica para proteger tu capital.', icon: '🚫' },
-            { title: 'Seguir a la multitud', content: 'Comprar cuando todos compran y vender cuando todos venden suele ser una mala estrategia.', icon: '🐑' },
-            { title: 'No tener paciencia', content: 'Las mejores inversiones requieren tiempo. El trading excesivo genera costos y errores.', icon: '⏰' },
-            { title: 'Ignorar las comisiones', content: 'Las comisiones pueden comer tus ganancias. Compara plataformas y elige la que mejor se adapte.', icon: '💲' }
+            { title: 'Invertir sin conocimiento', content: 'El error más común es invertir sin entender el activo. Siempre educa antes de invertir.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-light-bulb-alt.svg' },
+            { title: 'No diversificar', content: 'Concentrar todo en una sola inversión es muy arriesgado. Diversifica para proteger tu capital.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-archive.svg' },
+            { title: 'Seguir a la multitud', content: 'Comprar cuando todos compran y vender cuando todos venden suele ser una mala estrategia.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-message-circle.svg' },
+            { title: 'No tener paciencia', content: 'Las mejores inversiones requieren tiempo. El trading excesivo genera costos y errores.', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg' },
+            { title: 'Ignorar las comisiones', content: 'Las comisiones pueden comer tus ganancias. Compara plataformas y elige la que mejor se adapte.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-file-detail.svg' }
         ]
     },
 
@@ -154,13 +156,15 @@ const app = {
         // Cargar portfolio
         this.state.portfolio = await portfolioService.getPortfolio(this.state.currentUserId);
 
-        // Cargar misiones (usamos localStorage como fallback temporal)
-        const missions = localStorage.getItem('invesmate_missions');
-        this.state.missions = missions ? JSON.parse(missions) : JSON.parse(JSON.stringify(this.missionsData));
+        // Cargar misiones desde Supabase
+        this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
 
-        // Cargar logros
-        const achievements = localStorage.getItem('invesmate_achievements');
-        this.state.achievements = achievements ? JSON.parse(achievements) : JSON.parse(JSON.stringify(this.achievementsData));
+        // Cargar logros desde Supabase
+        this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
+
+        // Cargar artículos leídos
+        const articlesRead = localStorage.getItem('invesmate_articles_read');
+        this.state.articlesRead = articlesRead ? parseInt(articlesRead) : 0;
     },
 
     // ========================================
@@ -256,12 +260,16 @@ const app = {
             this.state.balance = 10000;
             this.state.portfolio = [];
 
-            // Guardar misiones y logros iniciales en localStorage (fallback)
-            localStorage.setItem('invesmate_missions', JSON.stringify(this.missionsData));
-            localStorage.setItem('invesmate_achievements', JSON.stringify(this.achievementsData));
+            // Inicializar misiones y logros en Supabase
+            await missionsService.initializeMissions(this.state.currentUserId);
+            await missionsService.initializeAchievements(this.state.currentUserId);
 
-            // Desbloquear primer logro
-            this.unlockAchievement(1);
+            // Recargar datos
+            await this.loadUserData();
+
+            // Desbloquear primer logro automáticamente
+            await missionsService.unlockAchievement(this.state.currentUserId, 1);
+            this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
 
             this.showToast('¡Cuenta creada con éxito!', 'success');
             this.navigate('main-menu-screen');
@@ -499,7 +507,7 @@ const app = {
         container.innerHTML = this.state.missions.map(mission => `
             <div class="mission-item ${mission.completed ? 'completed' : 'pending'}"
                  onclick="app.showMissionDetail(${mission.id})">
-                <span class="mission-icon">${mission.icon}</span>
+                <img class="mission-icon" src="${mission.icon}" alt="Icono">
                 <div class="mission-info">
                     <span class="mission-title">${mission.title}</span>
                     <span class="mission-desc">${mission.description}</span>
@@ -533,46 +541,63 @@ const app = {
     async completeMission() {
         if (!this.state.currentMission || this.state.currentMission.completed) return;
 
-        this.state.currentMission.completed = true;
-        this.state.balance += this.state.currentMission.reward;
+        // Completar misión en Supabase
+        const result = await missionsService.completeMission(this.state.currentUserId, this.state.currentMission.id);
 
-        // Actualizar en Supabase y localStorage
-        if (this.state.currentUserId) {
+        if (result.success) {
+            this.state.currentMission.completed = true;
+            this.state.balance += result.reward;
+
+            // Actualizar balance en Supabase
             await authService.updateBalance(this.state.currentUserId, this.state.balance);
-        }
-        localStorage.setItem('invesmate_missions', JSON.stringify(this.state.missions));
 
-        this.closeModal();
-        this.showToast(`¡Misión completada! +$${this.state.currentMission.reward}`, 'success');
-        this.renderMissions();
+            // Recargar misiones desde Supabase
+            this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
+
+            this.closeModal();
+            this.showToast(`¡Misión completada! +$${result.reward}`, 'success');
+            this.renderMissions();
+
+            // Verificar misión de "Maestro de Invesmate"
+            await this.checkAllMissionsComplete();
+        } else {
+            this.showToast('Error al completar misión', 'error');
+        }
+    },
+
+    async checkAllMissionsComplete() {
+        const completed = this.state.missions.filter(m => m.completed).length;
+        if (completed >= this.state.missions.length) {
+            await this.completeMissionById(8);
+        }
     },
 
     async checkMissions(actionType, product) {
         if (!this.state.currentUserId) return;
 
-        // Misión: Primera inversión
-        if (actionType === 'purchase' && this.state.portfolio.length === 1) {
+        // Misión 1: Primera Inversión (primera compra)
+        if (actionType === 'purchase' && this.state.portfolio.length >= 1) {
             await this.completeMissionById(1);
         }
 
-        // Misión: Diversificador (3 activos diferentes)
+        // Misión 2: Diversificador (3 activos diferentes)
         if (this.state.portfolio.length >= 3) {
             await this.completeMissionById(2);
         }
 
-        // Misión: Inversor ETF
+        // Misión 3: Inversor ETF (primero ETF)
         if (product && product.category === 'etfs') {
             const hasETF = this.state.portfolio.some(p => (p.product_category || p.category) === 'etfs');
             if (hasETF) await this.completeMissionById(3);
         }
 
-        // Misión: Cripto Entusiasta
+        // Misión 4: Cripto Entusiasta (primera crypto)
         if (product && product.category === 'crypto') {
             const hasCrypto = this.state.portfolio.some(p => (p.product_category || p.category) === 'crypto');
             if (hasCrypto) await this.completeMissionById(4);
         }
 
-        // Misión: Portafolio de $1K
+        // Misión 5: Portafolio de $1K
         const portfolioValue = this.state.portfolio.reduce((sum, item) => {
             const prod = this.products.find(p => p.id === (item.product_id || item.id));
             return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
@@ -580,33 +605,84 @@ const app = {
         if (portfolioValue >= 1000) {
             await this.completeMissionById(5);
         }
+
+        // Misión 6: Estudiante Dedicado (3 artículos leídos)
+        if (this.state.articlesRead >= 3) {
+            await this.completeMissionById(6);
+        }
+
+        // Misión 7: Inversor Activo (5 compras diferentes)
+        const totalPurchases = this.state.portfolio.length;
+        if (totalPurchases >= 5) {
+            await this.completeMissionById(7);
+        }
+
+        // Verificar logros después de cada acción
+        await this.checkAchievements();
     },
 
     async completeMissionById(id) {
         const mission = this.state.missions.find(m => m.id === id);
         if (mission && !mission.completed) {
-            mission.completed = true;
-            this.state.balance += mission.reward;
+            // Completar en Supabase
+            const result = await missionsService.completeMission(this.state.currentUserId, id);
 
-            // Actualizar en Supabase
-            if (this.state.currentUserId) {
+            if (result.success) {
+                mission.completed = true;
+                this.state.balance += result.reward;
+
+                // Actualizar balance en Supabase
                 await authService.updateBalance(this.state.currentUserId, this.state.balance);
-            }
-            localStorage.setItem('invesmate_missions', JSON.stringify(this.state.missions));
 
-            this.showToast(`¡Misión desbloqueada: ${mission.title}! +$${mission.reward}`, 'success');
+                // Recargar misiones
+                this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
+
+                this.showToast(`¡Misión desbloqueada: ${mission.title}! +$${result.reward}`, 'success');
+
+                // Verificar si todas las misiones están completas
+                await this.checkAllMissionsComplete();
+            }
         }
     },
 
     // ========================================
     // LOGROS
     // ========================================
-    unlockAchievement(id) {
-        const achievement = this.state.achievements.find(a => a.id === id);
-        if (achievement && !achievement.unlocked) {
-            achievement.unlocked = true;
-            localStorage.setItem('invesmate_achievements', JSON.stringify(this.state.achievements));
-            this.showToast(`¡Logro desbloqueado: ${achievement.name}!`, 'success');
+    async unlockAchievement(id) {
+        const result = await missionsService.unlockAchievement(this.state.currentUserId, id);
+
+        if (result.success) {
+            const achievement = this.state.achievements.find(a => a.id === id);
+            if (achievement) {
+                achievement.unlocked = true;
+            }
+            // Recargar logros
+            this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
+            this.showToast(`¡Logro desbloqueado: ${result.name}!`, 'success');
+        }
+    },
+
+    async checkAchievements() {
+        const portfolioValue = this.state.portfolio.reduce((sum, item) => {
+            const prod = this.products.find(p => p.id === (item.product_id || item.id));
+            return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
+        }, 0);
+        const uniqueAssets = this.state.portfolio.length;
+        const missionsCompleted = this.state.missions.filter(m => m.completed).length;
+
+        // Logro 3: Diversificador (5 activos diferentes)
+        if (uniqueAssets >= 5) {
+            await this.unlockAchievement(3);
+        }
+
+        // Logro 7: Millonario Virtual (portafolio $100K)
+        if (portfolioValue >= 100000) {
+            await this.unlockAchievement(7);
+        }
+
+        // Logro 8: Maestro (todas las misiones completadas)
+        if (missionsCompleted >= this.state.missions.length) {
+            await this.unlockAchievement(8);
         }
     },
 
@@ -617,7 +693,7 @@ const app = {
 
         container.innerHTML = this.state.achievements.map(achievement => `
             <div class="achievement-item ${achievement.unlocked ? '' : 'locked'}">
-                <span class="achievement-icon">${achievement.icon}</span>
+                <img class="achievement-icon" src="${achievement.icon}" alt="Icono">
                 <span class="achievement-name">${achievement.name}</span>
                 <span class="achievement-desc">${achievement.description}</span>
             </div>
@@ -645,16 +721,34 @@ const app = {
         }
 
         container.innerHTML = content.map((item, index) => `
-            <div class="learning-item" onclick="this.classList.toggle('expanded')">
+            <div class="learning-item" onclick="app.onArticleRead(this)">
                 <div class="learning-item-header">
                     <span class="learning-item-title">${item.title}</span>
-                    <span class="learning-item-icon">${item.icon}</span>
+                    ${item.icon.endsWith('.svg') 
+                        ? `<img class="learning-item-icon" src="${item.icon}" alt="Icono">` 
+                        : `<span class="learning-item-icon">${item.icon}</span>`}
                 </div>
                 <div class="learning-item-content">
                     <p>${item.content}</p>
                 </div>
             </div>
         `).join('');
+    },
+
+    onArticleRead(element) {
+        element.classList.toggle('expanded');
+
+        if (element.classList.contains('expanded')) {
+            const readArticles = parseInt(localStorage.getItem('invesmate_articles_read') || '0');
+            const newCount = readArticles + 1;
+            localStorage.setItem('invesmate_articles_read', newCount.toString());
+            this.state.articlesRead = newCount;
+
+            // Verificar misión de Estudiante Dedicado
+            if (newCount === 3) {
+                this.checkMissions('article_read');
+            }
+        }
     },
 
     // ========================================
