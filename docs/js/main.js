@@ -54,14 +54,14 @@ const app = {
     // MISIONES DISPONIBLES
     // ========================================
     missionsData: [
-        { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg', completed: false, type: 'first_purchase' },
-        { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', completed: false, type: 'diversify' },
-        { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-barcode.svg', completed: false, type: 'first_etf' },
-        { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-bitcoin.svg', completed: false, type: 'first_crypto' },
-        { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', completed: false, type: 'portfolio_1k' },
-        { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-address-book.svg', completed: false, type: 'read_articles' },
-        { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', completed: false, type: 'active_trader' },
-        { id: 8, title: 'Maestro de Invesmate', description: 'Completa todas las misiones', reward: 5000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-treasure-chest.svg', completed: false, type: 'all_missions' }
+        { id: 1, title: 'Analista Principiante', description: 'Lee al menos 1 artículo y realiza tu primera inversión.', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg', completed: false, type: 'first_purchase_after_learning' },
+        { id: 2, title: 'Diversificación Estratégica', description: 'Ten al menos 5 activos diferentes en tu portafolio.', reward: 2500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', completed: false, type: 'diversify_5' },
+        { id: 3, title: 'Fondo de Seguridad', description: 'Invierte al menos $5,000 en un ETF seguro.', reward: 3000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-barcode.svg', completed: false, type: 'etf_5k' },
+        { id: 4, title: 'Portafolio Crypto', description: 'Invierte en 3 criptomonedas diferentes.', reward: 2000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-bitcoin.svg', completed: false, type: 'crypto_3' },
+        { id: 5, title: 'Magnate en Ascenso', description: 'Alcanza un valor total de portafolio de $50,000.', reward: 5000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', completed: false, type: 'portfolio_50k' },
+        { id: 6, title: 'Académico Financiero', description: 'Lee al menos 10 artículos de aprendizaje.', reward: 1500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-address-book.svg', completed: false, type: 'read_10_articles' },
+        { id: 7, title: 'Trader Experimentado', description: 'Realiza al menos 15 operaciones de compra.', reward: 4000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', completed: false, type: 'active_trader_15' },
+        { id: 8, title: 'Maestro Invesmate', description: 'Completa todas las demás misiones.', reward: 10000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-treasure-chest.svg', completed: false, type: 'all_missions' }
     ],
 
     // ========================================
@@ -69,13 +69,13 @@ const app = {
     // ========================================
     achievementsData: [
         { id: 1, name: 'Primeros Pasos', description: 'Completa tu registro', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg', unlocked: false },
-        { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', unlocked: false },
-        { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', unlocked: false },
-        { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg', unlocked: false },
-        { id: 5, name: 'Trader Activo', description: '20 operaciones realizadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', unlocked: false },
-        { id: 6, name: 'Estudiante', description: 'Completa el aprendizaje', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-intellect.svg', unlocked: false },
-        { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle-stars.svg', unlocked: false },
-        { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-gem-alt.svg', unlocked: false }
+        { id: 2, name: 'Inversor Informado', description: 'Primera compra tras estudiar', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', unlocked: false },
+        { id: 3, name: 'Gran Diversificador', description: '10 activos diferentes', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', unlocked: false },
+        { id: 4, name: 'Rey del ETF', description: '$10,000 en ETFs', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg', unlocked: false },
+        { id: 5, name: 'Trader Frenético', description: '30 operaciones realizadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', unlocked: false },
+        { id: 6, name: 'Erudito', description: 'Lee los 24 artículos de aprendizaje', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-intellect.svg', unlocked: false },
+        { id: 7, name: 'Lobo de Wall Street', description: 'Portafolio de $250K', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle-stars.svg', unlocked: false },
+        { id: 8, name: 'Leyenda', description: 'Todas las misiones completadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-gem-alt.svg', unlocked: false }
     ],
 
 // ========================================
@@ -83,26 +83,34 @@ const app = {
     // ========================================
     learningContent: {
         concepts: [
-            { title: '¿Qué es una Acción?', content: 'Una acción representa una parte del capital de una empresa. Al comprar acciones, te conviertes en accionista y tienes derecho a participar en las ganancias de la compañía.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-analyze.svg' },
-            { title: '¿Qué es un ETF?', content: 'Un ETF (Exchange Traded Fund) es un fondo de inversión que cotiza en bolsa. Permite diversificar invirtiendo en múltiples activos simultáneamente.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-briefcase-alt.svg' },
-            { title: 'Diversificación', content: 'Estrategia que consiste en distribuir las inversiones entre diferentes activos para reducir el riesgo. "No pongas todos los huevos en la misma canasta".', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg' },
-            { title: 'Riesgo y Rendimiento', content: 'Generalmente, a mayor potencial de rendimiento, mayor es el riesgo. Las inversiones seguras suelen ofrecer menores retornos.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-psychology.svg' },
-            { title: 'Interés Compuesto', content: 'El interés compuesto es cuando las ganancias generadas por una inversión se reinvierten y generan más ganancias. Es la fuerza más poderosa en las finanzas.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg' },
-            { title: 'Inflación', content: 'La inflación es el aumento generalizado de precios. Tu dinero pierde valor con el tiempo, por eso es importante invertir para superar la inflación.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-steps-down.svg' }
+            { title: '¿Qué es una Acción?', content: 'Una acción representa una fracción de la propiedad de una empresa pública. Al adquirirla, te conviertes en accionista, lo que te otorga derechos sobre los activos de la empresa y una porción de sus beneficios (dividendos). Su precio fluctúa según la oferta y la demanda, reflejando el valor percibido y el rendimiento futuro de la compañía.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-analyze.svg' },
+            { title: 'Fondos Cotizados (ETFs)', content: 'Un ETF (Exchange Traded Fund) es un conjunto diversificado de activos (como acciones o bonos) que cotiza en bolsa como si fuera una sola acción. Al comprar un ETF, como el S&P 500, estás invirtiendo simultáneamente en las 500 empresas más grandes de EE.UU., reduciendo significativamente el riesgo en comparación con comprar acciones individuales.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-briefcase-alt.svg' },
+            { title: 'Criptomonedas y Blockchain', content: 'Las criptomonedas son activos digitales descentralizados que utilizan la criptografía para asegurar transacciones. Operan sobre la tecnología Blockchain, un libro contable público e inmutable. Son conocidas por su alta volatilidad y potencial de crecimiento, pero conllevan un riesgo sustancial.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-bitcoin.svg' },
+            { title: 'Diversificación del Portafolio', content: 'Es la estrategia de gestión de riesgos que mezcla una amplia variedad de inversiones dentro de una cartera. La idea es que los rendimientos positivos de algunas inversiones neutralicen los rendimientos negativos de otras. Se resume en el principio: "Nunca pongas todos tus huevos en la misma canasta".', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg' },
+            { title: 'El Interés Compuesto', content: 'Albert Einstein lo llamó "la octava maravilla del mundo". Es el proceso mediante el cual los intereses de un capital inicial generan nuevos intereses. Al reinvertir tus ganancias, tu dinero crece de forma exponencial a lo largo del tiempo, haciendo que la paciencia sea tu mejor aliada.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg' },
+            { title: 'Relación Riesgo/Rendimiento', content: 'Principio fundamental: a mayor potencial de rendimiento, mayor será el riesgo asumido. Las inversiones muy seguras (como bonos del tesoro) ofrecen retornos bajos. Para buscar rentabilidades altas (como en criptomonedas o acciones de crecimiento), debes estar dispuesto a tolerar caídas drásticas en el precio.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-psychology.svg' },
+            { title: 'Inflación y Poder Adquisitivo', content: 'La inflación es el aumento sostenido y generalizado de los precios de los bienes y servicios. Si guardas tu dinero debajo del colchón o en una cuenta de ahorros sin intereses, la inflación destruye su poder adquisitivo año tras año. Invertir es la herramienta principal para que tu dinero mantenga (y aumente) su valor real.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-line-chart-down.svg' },
+            { title: 'Análisis Fundamental vs Técnico', content: 'El Análisis Fundamental evalúa el valor intrínseco de una empresa revisando sus estados financieros, liderazgo y ventajas competitivas. El Análisis Técnico estudia los gráficos de precios históricos y el volumen de trading para predecir tendencias futuras a corto plazo.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-bar-chart-alt-2.svg' }
         ],
         tips: [
-            { title: 'Empieza con poco', content: 'No necesitas grandes cantidades para comenzar. La clave es la constancia y el aprendizaje continuo.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-home-alt.svg' },
-            { title: 'Investiga antes de invertir', content: 'Nunca inviertas en algo que no entiendes. Estudia la empresa, el sector y las tendencias del mercado.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-search-alt.svg' },
-            { title: 'Define tu estrategia', content: 'Decide si eres inversor a largo plazo o trader de corto plazo. Cada estrategia requiere diferentes habilidades y tiempo.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-cog.svg' },
-            { title: 'Mantén la calma', content: 'Los mercados fluctúan. No tomes decisiones impulsivas basadas en el miedo o la codicia.', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg' },
-            { title: 'Rebalancea tu portafolio', content: 'Periódicamente ajusta tu portafolio para mantener la distribución de activos que deseas.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-archive-arrow-up.svg' }
+            { title: 'Paga tus Deudas Primero', content: 'Antes de invertir, elimina cualquier deuda con intereses altos (como tarjetas de crédito). Matemáticamente, es imposible que una inversión te garantice un 20% de rendimiento para compensar el 20% que el banco te cobra por tu deuda.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-credit-card.svg' },
+            { title: 'Investiga por ti Mismo (DYOR)', content: 'DYOR (Do Your Own Research). Nunca inviertas en un activo solo porque un amigo o influencer te lo recomendó. Asegúrate de entender el modelo de negocio, cómo generan dinero y cuáles son sus principales competidores antes de arriesgar tu capital.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-search-alt.svg' },
+            { title: 'Estrategia DCA (Promedio de Costo)', content: 'El "Dollar Cost Averaging" consiste en invertir una cantidad fija de dinero a intervalos regulares (ej. $100 cada mes), sin importar el precio del activo. Esto reduce el impacto de la volatilidad y evita el estrés de intentar adivinar el momento perfecto para comprar.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-calendar-plus.svg' },
+            { title: 'Horizonte a Largo Plazo', content: 'El mercado puede ser irracional a corto plazo, pero tiende a reflejar el valor real a largo plazo. Diseña tu estrategia pensando en décadas (10-20 años), no en días. El interés compuesto necesita tiempo para hacer su magia.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-trending-up.svg' },
+            { title: 'Fondo de Emergencia', content: 'Antes de enviar todo tu dinero a la bolsa, construye un fondo de emergencia en efectivo que cubra de 3 a 6 meses de tus gastos fijos. Esto te evitará tener que vender tus inversiones con pérdidas si ocurre un imprevisto en tu vida.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-shield-quarter.svg' },
+            { title: 'Controla tus Emociones', content: 'El mercado pondrá a prueba tu psicología. Ver tu portafolio caer un 30% causa pánico. Tener una estrategia escrita de antemano y ceñirte a ella te evitará vender en el peor momento por miedo.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-brain.svg' },
+            { title: 'Rebalanceo Periódico', content: 'Si una de tus inversiones crece desproporcionadamente, tu portafolio se desbalancea y asumes más riesgo del deseado. Una o dos veces al año, revisa y ajusta los porcentajes vendiendo lo que ha subido mucho y comprando lo que ha bajado.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-slider.svg' },
+            { title: 'Reinvierte tus Dividendos', content: 'Cuando las empresas te paguen dividendos, usa ese dinero para comprar más acciones de la misma empresa. Este pequeño hábito acelera drásticamente la bola de nieve del interés compuesto.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-refresh.svg' }
         ],
         mistakes: [
-            { title: 'Invertir sin conocimiento', content: 'El error más común es invertir sin entender el activo. Siempre educa antes de invertir.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-light-bulb-alt.svg' },
-            { title: 'No diversificar', content: 'Concentrar todo en una sola inversión es muy arriesgado. Diversifica para proteger tu capital.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-archive.svg' },
-            { title: 'Seguir a la multitud', content: 'Comprar cuando todos compran y vender cuando todos venden suele ser una mala estrategia.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-message-circle.svg' },
-            { title: 'No tener paciencia', content: 'Las mejores inversiones requieren tiempo. El trading excesivo genera costos y errores.', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg' },
-            { title: 'Ignorar las comisiones', content: 'Las comisiones pueden comer tus ganancias. Compara plataformas y elige la que mejor se adapte.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-file-detail.svg' }
+            { title: 'Invertir por FOMO', content: 'El FOMO (Fear Of Missing Out) o miedo a quedarse fuera, ocurre cuando compras un activo porque ves que todos están ganando dinero con él. Usualmente, cuando la noticia llega a las masas, el precio ya está inflado y estás comprando en el pico más alto.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-error-circle.svg' },
+            { title: 'Querer "Hacerse Rico Rápido"', content: 'La inversión no es un esquema para volverse millonario en una semana. Quienes buscan retornos rápidos suelen caer en estafas o asumen riesgos excesivos (apalancamiento) que terminan liquidando todo su capital.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-x-circle.svg' },
+            { title: 'Adivinar el Mercado (Market Timing)', content: 'Intentar comprar en el punto más bajo y vender en el más alto es estadísticamente imposible de mantener a largo plazo. "El tiempo en el mercado supera a sincronizar el mercado" (Time in the market beats timing the market).', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-time-five.svg' },
+            { title: 'Ignorar Costos y Comisiones', content: 'Las altas comisiones de los fondos mutuos o las tarifas de transacción frecuentes en el trading activo pueden devorar silenciosamente hasta el 50% de tus ganancias a largo plazo. Busca siempre instrumentos de bajo costo (como ETFs indexados).', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-money.svg' },
+            { title: 'Sobre-operar (Overtrading)', content: 'Comprar y vender constantemente genera comisiones y estrés, y estadísticamente produce peores rendimientos que simplemente comprar y mantener (Hold). Invertir debe ser aburrido, como ver crecer la hierba.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-transfer.svg' },
+            { title: 'Seguir a Gurús Ciegamente', content: 'Nadie tiene una bola de cristal. Si un "experto" en redes sociales te garantiza retornos exorbitantes y seguros, probablemente esté intentando venderte un curso o usar su audiencia para inflar un activo y vender el suyo.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-user-x.svg' },
+            { title: 'Invertir Dinero que Necesitas', content: 'Si vas a necesitar dinero para pagar la renta o la universidad el próximo mes, no lo inviertas en renta variable (acciones). El mercado puede caer sorpresivamente y te forzará a vender con fuertes pérdidas.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-wallet-alt.svg' },
+            { title: 'Sesgo de Confirmación', content: 'Ocurre cuando te enamoras de un activo y solo buscas noticias positivas sobre él, ignorando activamente las advertencias de peligro. Un buen inversor siempre busca argumentos en contra de sus propias inversiones para poner a prueba su solidez.', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-hide.svg' }
         ]
     },
 
@@ -519,11 +527,15 @@ const app = {
             this.closeModal();
             this.showToast(`¡Compra de ${product.symbol} realizada!`, 'success');
 
+            // Incrementar contador de operaciones
+            const ops = parseInt(localStorage.getItem('invesmate_operations') || '0') + 1;
+            localStorage.setItem('invesmate_operations', ops.toString());
+
             // Verificar misiones
             this.checkMissions('purchase', product);
 
-            // Desbloquear logro de primera compra
-            if (this.state.portfolio.length === 1) {
+            // Desbloquear logro de inversor informado (primera compra y leyó artículo)
+            if (ops === 1 && this.state.articlesRead >= 1) {
                 this.unlockAchievement(2);
             }
         } else {
@@ -661,45 +673,52 @@ const app = {
     async checkMissions(actionType, product) {
         if (!this.state.currentUserId) return;
 
-        // Misión 1: Primera Inversión (primera compra)
-        if (actionType === 'purchase' && this.state.portfolio.length >= 1) {
+        // Misión 1: Analista Principiante (1 artículo leído y 1 compra)
+        if (actionType === 'purchase' && this.state.portfolio.length >= 1 && this.state.articlesRead >= 1) {
             await this.completeMissionById(1);
         }
 
-        // Misión 2: Diversificador (3 activos diferentes)
-        if (this.state.portfolio.length >= 3) {
+        // Misión 2: Diversificación Estratégica (5 activos diferentes)
+        if (this.state.portfolio.length >= 5) {
             await this.completeMissionById(2);
         }
 
-        // Misión 3: Inversor ETF (primero ETF)
-        if (product && product.category === 'etfs') {
-            const hasETF = this.state.portfolio.some(p => (p.product_category || p.category) === 'etfs');
-            if (hasETF) await this.completeMissionById(3);
+        // Misión 3: Fondo de Seguridad (ETF > $5,000)
+        const hasBigETF = this.state.portfolio.some(p => {
+            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+            if (!prod || prod.category !== 'etfs') return false;
+            return (p.shares * prod.price) >= 5000;
+        });
+        if (hasBigETF) {
+            await this.completeMissionById(3);
         }
 
-        // Misión 4: Cripto Entusiasta (primera crypto)
-        if (product && product.category === 'crypto') {
-            const hasCrypto = this.state.portfolio.some(p => (p.product_category || p.category) === 'crypto');
-            if (hasCrypto) await this.completeMissionById(4);
+        // Misión 4: Portafolio Crypto (3 cryptos)
+        const cryptoCount = this.state.portfolio.filter(p => {
+            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+            return prod && prod.category === 'crypto';
+        }).length;
+        if (cryptoCount >= 3) {
+            await this.completeMissionById(4);
         }
 
-        // Misión 5: Portafolio de $1K
+        // Misión 5: Magnate en Ascenso ($50,000 portafolio)
         const portfolioValue = this.state.portfolio.reduce((sum, item) => {
-            const prod = this.products.find(p => p.id === (item.product_id || item.id));
+            const prod = this.products.find(p => p.id === (item.product_id || p.id));
             return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
         }, 0);
-        if (portfolioValue >= 1000) {
+        if (portfolioValue >= 50000) {
             await this.completeMissionById(5);
         }
 
-        // Misión 6: Estudiante Dedicado (3 artículos leídos)
-        if (this.state.articlesRead >= 3) {
+        // Misión 6: Académico Financiero (10 artículos leídos)
+        if (this.state.articlesRead >= 10) {
             await this.completeMissionById(6);
         }
 
-        // Misión 7: Inversor Activo (5 compras diferentes)
-        const totalPurchases = this.state.portfolio.length;
-        if (totalPurchases >= 5) {
+        // Misión 7: Trader Experimentado (15 operaciones)
+        const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
+        if (totalOps >= 15) {
             await this.completeMissionById(7);
         }
 
@@ -755,18 +774,41 @@ const app = {
         }, 0);
         const uniqueAssets = this.state.portfolio.length;
         const missionsCompleted = this.state.missions.filter(m => m.completed).length;
+        const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
 
-        // Logro 3: Diversificador (5 activos diferentes)
-        if (uniqueAssets >= 5) {
+        // Logro 3: Gran Diversificador (10 activos diferentes)
+        if (uniqueAssets >= 10) {
             await this.unlockAchievement(3);
         }
 
-        // Logro 7: Millonario Virtual (portafolio $100K)
-        if (portfolioValue >= 100000) {
+        // Logro 4: Rey del ETF ($10K en ETFs)
+        const etfValue = this.state.portfolio.reduce((sum, item) => {
+            const prod = this.products.find(p => p.id === (item.product_id || p.id));
+            if (prod && prod.category === 'etfs') {
+                return sum + (item.shares * prod.price);
+            }
+            return sum;
+        }, 0);
+        if (etfValue >= 10000) {
+            await this.unlockAchievement(4);
+        }
+
+        // Logro 5: Trader Frenético (30 operaciones)
+        if (totalOps >= 30) {
+            await this.unlockAchievement(5);
+        }
+
+        // Logro 6: Erudito (Lee los 24 artículos)
+        if (this.state.articlesRead >= 24) {
+            await this.unlockAchievement(6);
+        }
+
+        // Logro 7: Lobo de Wall Street (portafolio $250K)
+        if (portfolioValue >= 250000) {
             await this.unlockAchievement(7);
         }
 
-        // Logro 8: Maestro (todas las misiones completadas)
+        // Logro 8: Leyenda (todas las misiones completadas)
         if (missionsCompleted >= this.state.missions.length) {
             await this.unlockAchievement(8);
         }
@@ -830,9 +872,16 @@ const app = {
             localStorage.setItem('invesmate_articles_read', newCount.toString());
             this.state.articlesRead = newCount;
 
-            // Verificar misión de Estudiante Dedicado
-            if (newCount === 3) {
+            // Verificar misiones y logros relacionados con aprendizaje
+            if (newCount === 1) {
+                // Verificar si ya hizo una compra para desbloquear Misión 1
                 this.checkMissions('article_read');
+            }
+            if (newCount >= 10) {
+                this.checkMissions('article_read');
+            }
+            if (newCount >= 24) {
+                this.checkAchievements();
             }
         }
     },

@@ -7,26 +7,26 @@ import { supabase, isConnected } from './supabase-client.js';
 
 // Datos base de misiones
 const MISSIONS_DATA = [
-    { id: 1, title: 'Primera Inversión', description: 'Realiza tu primera compra de acciones', reward: 500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg', type: 'first_purchase' },
-    { id: 2, title: 'Diversificador', description: 'Compra 3 activos diferentes', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', type: 'diversify' },
-    { id: 3, title: 'Inversor ETF', description: 'Compra tu primer ETF', reward: 750, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-barcode.svg', type: 'first_etf' },
-    { id: 4, title: 'Cripto Entusiasta', description: 'Invierte en criptomonedas', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-bitcoin.svg', type: 'first_crypto' },
-    { id: 5, title: 'Portafolio de $1K', description: 'Ten $1,000 en tu portafolio', reward: 1500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', type: 'portfolio_1k' },
-    { id: 6, title: 'Estudiante Dedicado', description: 'Lee 3 artículos de aprendizaje', reward: 500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-address-book.svg', type: 'read_articles' },
-    { id: 7, title: 'Inversor Activo', description: 'Realiza 5 compras diferentes', reward: 2000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', type: 'active_trader' },
-    { id: 8, title: 'Maestro de Invesmate', description: 'Completa todas las misiones', reward: 5000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-treasure-chest.svg', type: 'all_missions' }
+    { id: 1, title: 'Analista Principiante', description: 'Lee al menos 1 artículo y realiza tu primera inversión.', reward: 1000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg', type: 'first_purchase_after_learning' },
+    { id: 2, title: 'Diversificación Estratégica', description: 'Ten al menos 5 activos diferentes en tu portafolio.', reward: 2500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg', type: 'diversify_5' },
+    { id: 3, title: 'Fondo de Seguridad', description: 'Invierte al menos $5,000 en un ETF seguro.', reward: 3000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-barcode.svg', type: 'etf_5k' },
+    { id: 4, title: 'Portafolio Crypto', description: 'Invierte en 3 criptomonedas diferentes.', reward: 2000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-bitcoin.svg', type: 'crypto_3' },
+    { id: 5, title: 'Magnate en Ascenso', description: 'Alcanza un valor total de portafolio de $50,000.', reward: 5000, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg', type: 'portfolio_50k' },
+    { id: 6, title: 'Académico Financiero', description: 'Lee al menos 10 artículos de aprendizaje.', reward: 1500, icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-address-book.svg', type: 'read_10_articles' },
+    { id: 7, title: 'Trader Experimentado', description: 'Realiza al menos 15 operaciones de compra.', reward: 4000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg', type: 'active_trader_15' },
+    { id: 8, title: 'Maestro Invesmate', description: 'Completa todas las demás misiones.', reward: 10000, icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-treasure-chest.svg', type: 'all_missions' }
 ];
 
 // Datos base de logros
 const ACHIEVEMENTS_DATA = [
     { id: 1, name: 'Primeros Pasos', description: 'Completa tu registro', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-star.svg' },
-    { id: 2, name: 'Inversor Novato', description: 'Primera compra realizada', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg' },
-    { id: 3, name: 'Diversificador', description: '5 activos diferentes', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg' },
-    { id: 4, name: 'Hodler', description: 'Mantén inversiones por 7 días', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg' },
-    { id: 5, name: 'Trader Activo', description: '20 operaciones realizadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg' },
-    { id: 6, name: 'Estudiante', description: 'Completa el aprendizaje', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-intellect.svg' },
-    { id: 7, name: 'Millonario Virtual', description: 'Portafolio de $100K', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle-stars.svg' },
-    { id: 8, name: 'Maestro', description: 'Todas las misiones completadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-gem-alt.svg' }
+    { id: 2, name: 'Inversor Informado', description: 'Primera compra tras estudiar', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle.svg' },
+    { id: 3, name: 'Gran Diversificador', description: '10 activos diferentes', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-share.svg' },
+    { id: 4, name: 'Rey del ETF', description: '$10,000 en ETFs', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-hourglass.svg' },
+    { id: 5, name: 'Trader Frenético', description: '30 operaciones realizadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-cart-check.svg' },
+    { id: 6, name: 'Erudito', description: 'Lee los 24 artículos de aprendizaje', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-intellect.svg' },
+    { id: 7, name: 'Lobo de Wall Street', description: 'Portafolio de $250K', icon: './img/boxicons-SVG2/svgs/basic/regular/400/bx-dollar-circle-stars.svg' },
+    { id: 8, name: 'Leyenda', description: 'Todas las misiones completadas', icon: './img/boxicons-SVG1/svgs/basic/regular/400/bx-gem-alt.svg' }
 ];
 
 export const missionsService = {
