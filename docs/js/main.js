@@ -110,6 +110,7 @@ const app = {
     // INICIALIZACIÓN
     // ========================================
     async init() {
+        this.setupTheme();
         this.setupEventListeners();
         this.updateSimulatedPrices();
 
@@ -125,6 +126,24 @@ const app = {
         } else {
             this.navigate('intro-screen');
         }
+    },
+
+    // ========================================
+    // TEMA (LIGHT / DARK MODE)
+    // ========================================
+    setupTheme() {
+        const savedTheme = localStorage.getItem('invesmate_theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    },
+
+    toggleTheme() {
+        const isLight = document.body.classList.toggle('light-mode');
+        localStorage.setItem('invesmate_theme', isLight ? 'light' : 'dark');
+        
+        // Efecto visual y feedback
+        this.showToast(`Modo ${isLight ? 'Claro' : 'Oscuro'} activado`, 'info');
     },
 
     // ========================================
@@ -400,7 +419,7 @@ const app = {
         document.getElementById('confirm-amount').textContent = `$${amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
         document.getElementById('confirm-balance').textContent = `$${(this.state.balance - amount).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 
-        this.navigate('purchase-modal');
+        document.getElementById('purchase-modal').classList.add('active');
     },
 
     async executePurchase() {
@@ -535,7 +554,7 @@ const app = {
             btn.disabled = false;
         }
 
-        this.navigate('mission-detail-screen');
+        document.getElementById('mission-detail-screen').classList.add('active');
     },
 
     async completeMission() {
@@ -562,6 +581,7 @@ const app = {
             await this.checkAllMissionsComplete();
         } else {
             this.showToast('Error al completar misión', 'error');
+            this.closeModal();
         }
     },
 

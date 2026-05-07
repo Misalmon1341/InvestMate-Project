@@ -192,10 +192,18 @@ export const missionsService = {
             });
 
             // Actualizar contador de misiones completadas
-            await supabase
+            const { data: profile } = await supabase
                 .from('profiles')
-                .update({ missions_completed: supabase.raw('missions_completed + 1') })
-                .eq('id', userId);
+                .select('missions_completed')
+                .eq('id', userId)
+                .single();
+
+            if (profile) {
+                await supabase
+                    .from('profiles')
+                    .update({ missions_completed: (profile.missions_completed || 0) + 1 })
+                    .eq('id', userId);
+            }
 
             return { success: true, reward: mission.reward };
         } catch (error) {
@@ -236,10 +244,18 @@ export const missionsService = {
                 .eq('achievement_id', achievementId);
 
             // Actualizar contador
-            await supabase
+            const { data: profile } = await supabase
                 .from('profiles')
-                .update({ achievements_unlocked: supabase.raw('achievements_unlocked + 1') })
-                .eq('id', userId);
+                .select('achievements_unlocked')
+                .eq('id', userId)
+                .single();
+
+            if (profile) {
+                await supabase
+                    .from('profiles')
+                    .update({ achievements_unlocked: (profile.achievements_unlocked || 0) + 1 })
+                    .eq('id', userId);
+            }
 
             return { success: true, name: achievement.name };
         } catch (error) {
