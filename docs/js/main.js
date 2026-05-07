@@ -399,6 +399,72 @@ const app = {
         document.getElementById('available-balance').textContent = this.formatNumber(this.state.balance);
         document.getElementById('purchase-amount').value = '';
 
+        // --- INICIALIZAR GRÁFICA ---
+        const ctx = document.getElementById('price-chart').getContext('2d');
+        if (this.chartInstance) {
+            this.chartInstance.destroy();
+        }
+
+        // Generar datos históricos simulados
+        const historyData = [];
+        let simPrice = product.price * (1 - (product.change / 100)); // Precio inicial estimado
+        for (let i = 0; i < 20; i++) {
+            historyData.push(simPrice);
+            simPrice = simPrice * (1 + (Math.random() - 0.48) * 0.05); // Fluctuación aleatoria
+        }
+        historyData[19] = product.price; // El último punto es el precio actual
+
+        const isPositive = product.change >= 0;
+        const color = isPositive ? '#00D09C' : '#FF6B6B';
+        const colorBg = isPositive ? 'rgba(0, 208, 156, 0.2)' : 'rgba(255, 107, 107, 0.2)';
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(0, colorBg);
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+        this.chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 20}, (_, i) => i),
+                datasets: [{
+                    label: 'Precio',
+                    data: historyData,
+                    borderColor: color,
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { display: false } // Ocultar ejes para un diseño más limpio
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
         this.navigate('product-detail-screen');
     },
 
@@ -825,6 +891,19 @@ const app = {
                 const changeEl = document.getElementById('detail-change');
                 changeEl.textContent = `${updatedProduct.change >= 0 ? '+' : ''}${updatedProduct.change.toFixed(2)}%`;
                 changeEl.className = `detail-stat-value ${updatedProduct.change >= 0 ? 'text-positive' : 'text-negative'}`;
+                
+                // Actualizar gráfica en tiempo real
+                if (this.chartInstance) {
+                    const data = this.chartInstance.data.datasets[0].data;
+                    data.shift(); // Remover el dato más viejo
+                    data.push(updatedProduct.price); // Añadir el nuevo
+                    
+                    const isPositive = updatedProduct.change >= 0;
+                    const color = isPositive ? '#00D09C' : '#FF6B6B';
+                    this.chartInstance.data.datasets[0].borderColor = color;
+                    
+                    this.chartInstance.update();
+                }
             }
         }
     },
