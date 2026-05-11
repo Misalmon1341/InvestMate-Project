@@ -8,20 +8,17 @@ import { supabase, isConnected } from './supabase-client.js';
 export const authService = {
     /**
      * Registrar nuevo usuario
-     * @param {string} username - Nombre de usuario
-     * @param {string} email - Email (opcional, puede ser username@invesmate.local)
+     * @param {string} email - Correo electrónico
      * @param {string} password - Contraseña
+     * @param {string} username - Nombre de usuario
      */
-    async signup(username, password) {
+    async signup(email, password, username) {
         if (!isConnected) {
             // Fallback a localStorage
-            return this._signupLocal(username, password);
+            return this._signupLocal(email, password, username);
         }
 
         try {
-            // Generar email ficticio si no se proporciona
-            const email = `${username.replace(/\s/g, '.').toLowerCase()}@invesmate.local`;
-
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -54,18 +51,15 @@ export const authService = {
 
     /**
      * Iniciar sesión
-     * @param {string} username - Nombre de usuario
+     * @param {string} email - Correo electrónico
      * @param {string} password - Contraseña
      */
-    async login(username, password) {
+    async login(email, password) {
         if (!isConnected) {
-            return this._loginLocal(username, password);
+            return this._loginLocal(email, password);
         }
 
         try {
-            // Convertir username a email
-            const email = `${username.replace(/\s/g, '.').toLowerCase()}@invesmate.local`;
-
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
@@ -173,18 +167,19 @@ export const authService = {
     // ========================================
     // MÉTODOS LOCALES (FALLBACK)
     // ========================================
-    _signupLocal(username, password) {
+    _signupLocal(email, password, username) {
         const users = JSON.parse(localStorage.getItem('invesmate_users') || '[]');
 
-        if (users.find(u => u.username === username)) {
+        if (users.find(u => u.email === email || u.username === username)) {
             return {
                 success: false,
-                error: 'El usuario ya existe'
+                error: 'El usuario o correo ya existe'
             };
         }
 
         const newUser = {
             id: `local_${Date.now()}`,
+            email,
             username,
             password, // En prod real, NUNCA guardar password en claro
             joinDate: new Date().toISOString(),
@@ -206,9 +201,9 @@ export const authService = {
         };
     },
 
-    _loginLocal(username, password) {
+    _loginLocal(email, password) {
         const users = JSON.parse(localStorage.getItem('invesmate_users') || '[]');
-        const user = users.find(u => u.username === username && u.password === password);
+        const user = users.find(u => u.email === email && u.password === password);
 
         if (!user) {
             return {

@@ -249,10 +249,10 @@ const app = {
     },
 
     async login() {
-        const username = document.getElementById('login-username').value.trim();
+        const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
 
-        const result = await authService.login(username, password);
+        const result = await authService.login(email, password);
 
         if (result.success) {
             this.state.currentUser = result.user;
@@ -270,6 +270,7 @@ const app = {
     },
 
     async signup() {
+        const email = document.getElementById('signup-email').value.trim();
         const username = document.getElementById('signup-username').value.trim();
         const password = document.getElementById('signup-password').value;
         const confirm = document.getElementById('signup-confirm').value;
@@ -279,7 +280,7 @@ const app = {
             return;
         }
 
-        const result = await authService.signup(username, password);
+        const result = await authService.signup(email, password, username);
 
         if (result.success) {
             this.state.currentUser = result.user;
