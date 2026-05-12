@@ -352,8 +352,16 @@ const app = {
         const result = await authService.requestPasswordReset(email);
 
         if (result.success) {
-            this.showToast('Enlace de recuperación enviado. Revisa tu correo.', 'success');
-            this.navigate('login-screen');
+            const container = document.querySelector('#forgot-password-screen .auth-container');
+            container.innerHTML = `
+                <div class="logo-small">INVESMATE</div>
+                <h2 class="auth-title" style="color: #00D09C;">¡Revisa tu correo!</h2>
+                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5;">
+                    Hemos enviado un enlace seguro a:<br><strong style="color: white;">${email}</strong><br><br>
+                    Por favor, <strong>abre tu correo electrónico y haz clic en ese enlace</strong> para poder escribir tu nueva contraseña.
+                </p>
+                <button class="btn-primary btn-large" onclick="app.navigate('login-screen')">Volver al Inicio de Sesión</button>
+            `;
         } else {
             this.showToast(result.error || 'Error al enviar enlace', 'error');
         }
