@@ -20,8 +20,8 @@ try {
     // Ignorar error si no estamos en entorno Vite (ej. Live Server normal)
 }
 
-const SUPABASE_URL = envUrl || localStorage.getItem('supabase_url') || FALLBACK_URL;
-const SUPABASE_ANON_KEY = envKey || localStorage.getItem('supabase_anon_key') || FALLBACK_ANON_KEY;
+const SUPABASE_URL = envUrl || FALLBACK_URL || localStorage.getItem('supabase_url');
+const SUPABASE_ANON_KEY = envKey || FALLBACK_ANON_KEY || localStorage.getItem('supabase_anon_key');
 
 // Validar configuración
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
