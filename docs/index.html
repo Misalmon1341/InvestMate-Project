@@ -136,6 +136,7 @@
     <!-- PANTALLA DE NUEVA CONTRASEÑA -->
     <section id="reset-password-screen" class="screen">
         <div class="auth-container">
+            <button class="btn-back" onclick="app.navigate(app.state.currentUser ? 'profile-screen' : 'login-screen')">← Volver</button>
             <div class="logo-small">INVESMATE</div>
             <h2 class="auth-title">Nueva Contraseña</h2>
             <form id="reset-password-form" class="auth-form">
@@ -243,6 +244,9 @@
             <div class="profile-actions">
                 <button class="btn-secondary btn-large" onclick="app.navigate('main-menu-screen')">
                     Menú Principal
+                </button>
+                <button class="btn-secondary btn-large" onclick="app.navigate('reset-password-screen')">
+                    Cambiar Contraseña
                 </button>
                 <button class="btn-danger btn-large" onclick="app.logout()">
                     Cerrar Sesión
