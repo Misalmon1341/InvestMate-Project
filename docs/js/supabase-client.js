@@ -6,9 +6,22 @@
 // Importar desde CDN para uso en navegador
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-// Configuración - se carga desde variables de entorno o localStorage para desarrollo
-const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || localStorage.getItem('supabase_url');
-const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabase_anon_key');
+// Valores por defecto (Fallback para cuando no se usa Vite como Live Server)
+const FALLBACK_URL = 'https://jkosuqfdpnclnvvekonu.supabase.co';
+const FALLBACK_ANON_KEY = 'sb_publishable_CfDAzR5guii0lyX4kBQCGw_6iVErkvX';
+
+let envUrl = undefined;
+let envKey = undefined;
+
+try {
+    envUrl = import.meta.env?.VITE_SUPABASE_URL;
+    envKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+} catch (e) {
+    // Ignorar error si no estamos en entorno Vite (ej. Live Server normal)
+}
+
+const SUPABASE_URL = envUrl || localStorage.getItem('supabase_url') || FALLBACK_URL;
+const SUPABASE_ANON_KEY = envKey || localStorage.getItem('supabase_anon_key') || FALLBACK_ANON_KEY;
 
 // Validar configuración
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
