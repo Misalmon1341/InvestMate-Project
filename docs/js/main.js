@@ -6,6 +6,7 @@
 import { authService } from './auth-service.js';
 import { portfolioService } from './portfolio-service.js';
 import { missionsService } from './missions-service.js';
+import { onAuthChange } from './supabase-client.js';
 
 const app = {
     // ========================================
@@ -121,6 +122,13 @@ const app = {
         this.setupTheme();
         this.setupEventListeners();
         this.updateSimulatedPrices();
+
+        // Escuchar eventos de autenticación (ej. recuperación de contraseña)
+        onAuthChange((event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                this.navigate('reset-password-screen');
+            }
+        });
 
         // Actualizar precios cada 30 segundos
         setInterval(() => this.updateSimulatedPrices(), 30000);
@@ -246,6 +254,22 @@ const app = {
             e.preventDefault();
             await this.signup();
         });
+
+        const forgotForm = document.getElementById('forgot-password-form');
+        if (forgotForm) {
+            forgotForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.forgotPassword();
+            });
+        }
+
+        const resetForm = document.getElementById('reset-password-form');
+        if (resetForm) {
+            resetForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.resetPassword();
+            });
+        }
     },
 
     async login() {
@@ -314,6 +338,42 @@ const app = {
         this.state.portfolio = [];
         this.navigate('intro-screen');
         this.showToast('Sesión cerrada', 'info');
+    },
+
+    async forgotPassword() {
+        const email = document.getElementById('forgot-email').value.trim();
+        const result = await authService.requestPasswordReset(email);
+
+        if (result.success) {
+            this.showToast('Enlace de recuperación enviado. Revisa tu correo.', 'success');
+            this.navigate('login-screen');
+        } else {
+            this.showToast(result.error || 'Error al enviar enlace', 'error');
+        }
+    },
+
+    async resetPassword() {
+        const password = document.getElementById('reset-password').value;
+        const confirm = document.getElementById('reset-confirm').value;
+
+        if (password !== confirm) {
+            this.showToast('Las contraseñas no coinciden', 'error');
+            return;
+        }
+
+        const result = await authService.updatePassword(password);
+
+        if (result.success) {
+            this.showToast('¡Contraseña actualizada con éxito!', 'success');
+            await this.checkAuthSession();
+            if (this.state.currentUser) {
+                this.navigate('main-menu-screen');
+            } else {
+                this.navigate('login-screen');
+            }
+        } else {
+            this.showToast(result.error || 'Error al actualizar contraseña', 'error');
+        }
     },
 
     // ========================================

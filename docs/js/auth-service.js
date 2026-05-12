@@ -108,6 +108,46 @@ export const authService = {
     },
 
     /**
+     * Solicitar recuperación de contraseña
+     * @param {string} email - Correo electrónico
+     */
+    async requestPasswordReset(email) {
+        if (!isConnected) {
+            return { success: false, error: 'En modo local no se puede recuperar la contraseña.' };
+        }
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.href.split('#')[0]
+            });
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('Error solicitando recuperación:', error);
+            return { success: false, error: this._mapAuthError(error) };
+        }
+    },
+
+    /**
+     * Actualizar contraseña
+     * @param {string} newPassword - Nueva contraseña
+     */
+    async updatePassword(newPassword) {
+        if (!isConnected) {
+            return { success: false, error: 'En modo local no se puede actualizar la contraseña.' };
+        }
+
+        try {
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('Error actualizando contraseña:', error);
+            return { success: false, error: this._mapAuthError(error) };
+        }
+    },
+
+    /**
      * Obtener perfil de usuario desde la base de datos
      */
     async getUserProfile(userId) {

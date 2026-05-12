@@ -69,6 +69,9 @@
                 <div class="form-group">
                     <label for="login-password">Contraseña</label>
                     <input type="password" id="login-password" required placeholder="Tu contraseña">
+                    <div style="text-align: right; margin-top: 5px;">
+                        <a href="#" onclick="app.navigate('forgot-password-screen'); return false;" style="font-size: 0.85rem; color: var(--primary);">¿Olvidaste tu contraseña?</a>
+                    </div>
                 </div>
                 <button type="submit" class="btn-primary btn-large">Entrar</button>
             </form>
@@ -108,6 +111,44 @@
                 ¿Ya tienes cuenta?
                 <a href="#" onclick="app.navigate('login-screen'); return false;">Inicia sesión</a>
             </p>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE RECUPERAR CONTRASEÑA -->
+    <section id="forgot-password-screen" class="screen">
+        <div class="auth-container">
+            <button class="btn-back" onclick="app.navigate('login-screen')">← Volver</button>
+            <div class="logo-small">INVESMATE</div>
+            <h2 class="auth-title">Recuperar Contraseña</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                Ingresa tu correo y te enviaremos un enlace para cambiar tu contraseña.
+            </p>
+            <form id="forgot-password-form" class="auth-form">
+                <div class="form-group">
+                    <label for="forgot-email">Correo electrónico</label>
+                    <input type="email" id="forgot-email" required placeholder="Tu correo electrónico">
+                </div>
+                <button type="submit" class="btn-primary btn-large">Enviar Enlace</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE NUEVA CONTRASEÑA -->
+    <section id="reset-password-screen" class="screen">
+        <div class="auth-container">
+            <div class="logo-small">INVESMATE</div>
+            <h2 class="auth-title">Nueva Contraseña</h2>
+            <form id="reset-password-form" class="auth-form">
+                <div class="form-group">
+                    <label for="reset-password">Nueva contraseña</label>
+                    <input type="password" id="reset-password" required placeholder="Crea una nueva contraseña">
+                </div>
+                <div class="form-group">
+                    <label for="reset-confirm">Confirmar nueva contraseña</label>
+                    <input type="password" id="reset-confirm" required placeholder="Confirma tu nueva contraseña">
+                </div>
+                <button type="submit" class="btn-primary btn-large">Actualizar Contraseña</button>
+            </form>
         </div>
     </section>
 
