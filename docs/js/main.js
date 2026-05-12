@@ -8,6 +8,13 @@ import { portfolioService } from './portfolio-service.js';
 import { missionsService } from './missions-service.js';
 import { onAuthChange } from './supabase-client.js';
 
+let isRecoveryMode = false;
+onAuthChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+        isRecoveryMode = true;
+    }
+});
+
 const app = {
     // ========================================
     // ESTADO DE LA APLICACIÓN
@@ -123,20 +130,20 @@ const app = {
         this.setupEventListeners();
         this.updateSimulatedPrices();
 
-        // Escuchar eventos de autenticación (ej. recuperación de contraseña)
-        onAuthChange((event, session) => {
-            if (event === 'PASSWORD_RECOVERY') {
-                this.navigate('reset-password-screen');
-            }
-        });
-
         // Actualizar precios cada 30 segundos
         setInterval(() => this.updateSimulatedPrices(), 30000);
 
         // Verificar sesión de Supabase
         await this.checkAuthSession();
 
-        if (this.state.currentUser) {
+        // Enrutar dependiendo del estado
+        if (isRecoveryMode || window.location.hash.includes('type=recovery')) {
+            // Limpiar el hash para que no vuelva a activarse si el usuario recarga la página
+            if (window.history.replaceState) {
+                window.history.replaceState(null, null, window.location.pathname);
+            }
+            this.navigate('reset-password-screen');
+        } else if (this.state.currentUser) {
             this.navigate('main-menu-screen');
             this.updateUI();
         } else {
