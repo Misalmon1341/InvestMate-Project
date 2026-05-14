@@ -70,11 +70,16 @@ export const authService = {
             // Obtener perfil del usuario
             const profile = await this.getUserProfile(data.user.id);
 
+            // Fallback chain: perfil de BD → metadata del registro → email
+            const resolvedUsername = profile?.username
+                || data.user.user_metadata?.username
+                || email;
+
             return {
                 success: true,
                 user: {
                     id: data.user.id,
-                    username: profile?.username || username,
+                    username: resolvedUsername,
                     email: email,
                     balance: profile?.balance || 10000,
                     joinDate: profile?.created_at || new Date().toISOString()

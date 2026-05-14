@@ -70,7 +70,8 @@
                     <label for="login-password">Contraseña</label>
                     <input type="password" id="login-password" required placeholder="Tu contraseña">
                     <div style="text-align: right; margin-top: 5px;">
-                        <a href="#" onclick="app.navigate('forgot-password-screen'); return false;" style="font-size: 0.85rem; color: var(--primary);">¿Olvidaste tu contraseña?</a>
+                        <a href="#" onclick="app.navigate('forgot-password-screen'); return false;"
+                            style="font-size: 0.85rem; color: var(--primary);">¿Olvidaste tu contraseña?</a>
                     </div>
                 </div>
                 <button type="submit" class="btn-primary btn-large">Entrar</button>
@@ -112,7 +113,8 @@
                 <a href="#" onclick="app.navigate('login-screen'); return false;">Inicia sesión</a>
             </p>
             <p class="auth-switch" style="margin-top: 5px;">
-                <a href="#" onclick="app.navigate('forgot-password-screen'); return false;">¿Olvidaste tu contraseña?</a>
+                <a href="#" onclick="app.navigate('forgot-password-screen'); return false;">¿Olvidaste tu
+                    contraseña?</a>
             </p>
         </div>
     </section>
@@ -139,7 +141,8 @@
     <!-- PANTALLA DE NUEVA CONTRASEÑA -->
     <section id="reset-password-screen" class="screen">
         <div class="auth-container">
-            <button class="btn-back" onclick="app.navigate(app.state.currentUser ? 'profile-screen' : 'login-screen')">← Volver</button>
+            <button class="btn-back" onclick="app.navigate(app.state.currentUser ? 'profile-screen' : 'login-screen')">←
+                Volver</button>
             <div class="logo-small">INVESMATE</div>
             <h2 class="auth-title">Nueva Contraseña</h2>
             <form id="reset-password-form" class="auth-form">
