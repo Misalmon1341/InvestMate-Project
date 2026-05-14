@@ -175,20 +175,26 @@ const app = {
     async checkAuthSession() {
         const session = await authService.getSession();
         if (session?.user) {
+            const user = session.user;
             // Obtener perfil desde Supabase
-            const profile = await authService.getUserProfile(session.user.id);
-            if (profile) {
-                this.state.currentUser = {
-                    id: profile.id,
-                    username: profile.username,
-                    balance: profile.balance || 10000
-                };
-                this.state.currentUserId = profile.id;
-                this.state.balance = profile.balance || 10000;
+            const profile = await authService.getUserProfile(user.id);
 
-                // Cargar portfolio y misiones desde Supabase
-                await this.loadUserData();
-            }
+            // Fallback chain para username: perfil BD → metadata auth → email
+            const resolvedUsername = profile?.username
+                || user.user_metadata?.username
+                || user.email;
+
+            this.state.currentUser = {
+                id: user.id,
+                username: resolvedUsername,
+                email: user.email,
+                balance: profile?.balance || 10000
+            };
+            this.state.currentUserId = user.id;
+            this.state.balance = profile?.balance || 10000;
+
+            // Cargar portfolio y misiones desde Supabase
+            await this.loadUserData();
         }
     },
 
