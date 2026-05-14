@@ -39,35 +39,35 @@ export const portfolioService = {
         const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
         
         if (!isConnected || !isUUID(userId)) {
-            console.warn('Usando almacenamiento local para compra (ID no es UUID o no hay conexión)');
+            console.log('Compra: Usando almacenamiento local (ID no UUID o sin conexión)');
             return this._buyLocal(userId, product, amount, shares);
         }
 
         try {
             // Asegurarnos de que el usuario está realmente autenticado en Supabase
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                throw new Error('Sesión de Supabase no encontrada');
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            if (authError || !authData?.user) {
+                console.warn('Sesión de Supabase no válida para compra, usando local');
+                return this._buyLocal(userId, product, amount, shares);
             }
             
-            // Usar el ID de la sesión activa para evitar discrepancias
-            const activeUserId = user.id;
+            const activeUserId = authData.user.id;
 
             // Verificar si ya tiene este activo
-            const { data: existing } = await supabase
+            const { data: existing, error: fetchError } = await supabase
                 .from('portfolio')
                 .select('*')
                 .eq('user_id', activeUserId)
                 .eq('product_id', product.id)
-                .single();
+                .maybeSingle(); // Usar maybeSingle para evitar errores de 0 filas
 
             if (existing) {
                 // Actualizar posición existente
                 const newShares = existing.shares + shares;
-                const newAvgPrice = ((existing.shares * existing.avg_price) + amount) / newShares;
-                const newValue = existing.invested_value + amount;
+                const newAvgPrice = ((existing.shares * (existing.avg_price || 0)) + amount) / newShares;
+                const newValue = (existing.invested_value || 0) + amount;
 
-                const { error } = await supabase
+                const { error: updateError } = await supabase
                     .from('portfolio')
                     .update({
                         shares: newShares,
@@ -77,10 +77,10 @@ export const portfolioService = {
                     })
                     .eq('id', existing.id);
 
-                if (error) throw error;
+                if (updateError) throw updateError;
             } else {
                 // Crear nueva posición
-                const { error } = await supabase
+                const { error: insertError } = await supabase
                     .from('portfolio')
                     .insert({
                         user_id: activeUserId,
@@ -93,7 +93,7 @@ export const portfolioService = {
                         invested_value: amount
                     });
 
-                if (error) throw error;
+                if (insertError) throw insertError;
             }
 
             // Registrar transacción
@@ -101,13 +101,19 @@ export const portfolioService = {
 
             return { success: true, shares };
         } catch (error) {
-            console.error('Error en compra:', error);
-            // Fallback a local si hay error de base de datos (como el FK violation)
-            if (error.message.includes('foreign key constraint')) {
-                console.warn('Fallo de FK en Supabase, intentando guardado local...');
+            console.error('Error detallado en compra:', error);
+            
+            // Código 23503 es Foreign Key Violation en PostgreSQL
+            // También revisamos el mensaje por si acaso
+            const isFKError = error.code === '23503' || 
+                             (error.message && (error.message.includes('foreign key') || error.message.includes('clave foránea')));
+
+            if (isFKError) {
+                console.warn('Fallo de integridad (FK) en Supabase. Guardando localmente para no bloquear al usuario.');
                 return this._buyLocal(userId, product, amount, shares);
             }
-            return { success: false, error: error.message };
+            
+            return { success: false, error: error.message || 'Error en la base de datos' };
         }
     },
 
@@ -124,20 +130,20 @@ export const portfolioService = {
 
         try {
             // Asegurarnos de que el usuario está realmente autenticado en Supabase
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                throw new Error('Sesión de Supabase no encontrada');
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            if (authError || !authData?.user) {
+                return this._sellLocal(productId, sharesToSell, currentPrice);
             }
             
-            const activeUserId = user.id;
+            const activeUserId = authData.user.id;
 
             // Obtener el activo
-            const { data: asset } = await supabase
+            const { data: asset, error: fetchError } = await supabase
                 .from('portfolio')
                 .select('*')
                 .eq('user_id', activeUserId)
                 .eq('product_id', productId)
-                .single();
+                .maybeSingle();
 
             if (!asset) {
                 return { success: false, error: 'Activo no encontrado' };
@@ -180,6 +186,12 @@ export const portfolioService = {
             return { success: true, saleValue };
         } catch (error) {
             console.error('Error en venta:', error);
+            const isFKError = error.code === '23503' || 
+                             (error.message && (error.message.includes('foreign key') || error.message.includes('clave foránea')));
+            
+            if (isFKError) {
+                return this._sellLocal(productId, sharesToSell, currentPrice);
+            }
             return { success: false, error: error.message };
         }
     },
