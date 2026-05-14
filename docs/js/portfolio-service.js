@@ -10,8 +10,11 @@ export const portfolioService = {
      * Obtener portfolio de un usuario
      */
     async getPortfolio(userId) {
+        // Siempre obtener datos locales como base o respaldo
+        const localPortfolio = JSON.parse(localStorage.getItem('invesmate_portfolio') || '[]');
+        
         if (!isConnected) {
-            return JSON.parse(localStorage.getItem('invesmate_portfolio') || '[]');
+            return localPortfolio;
         }
 
         try {
@@ -22,10 +25,22 @@ export const portfolioService = {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            return data || [];
+            
+            // Si hay datos en Supabase, podemos elegir mostrarlos o combinarlos
+            // Por simplicidad y robustez, combinamos los activos locales que no estén en Supabase
+            // o simplemente concatenamos si son diferentes proyectos.
+            // Aquí optamos por priorizar Supabase pero añadir los locales "pendientes".
+            const supabaseData = data || [];
+            
+            // Filtrar locales que ya existen en Supabase (por product_id)
+            const uniqueLocals = localPortfolio.filter(lp => 
+                !supabaseData.some(sd => sd.product_id === lp.product_id || sd.product_id == lp.id)
+            );
+
+            return [...supabaseData, ...uniqueLocals];
         } catch (error) {
-            console.error('Error obteniendo portfolio:', error);
-            return [];
+            console.error('Error obteniendo portfolio de Supabase, usando local:', error);
+            return localPortfolio;
         }
     },
 
