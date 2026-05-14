@@ -67,22 +67,29 @@ export const authService = {
 
             if (error) throw error;
 
-            // Obtener perfil del usuario
+            if (!data?.user) {
+                throw new Error('No se pudo recuperar la información del usuario');
+            }
+
+            // Obtener perfil del usuario (opcional, no debe bloquear el login)
             const profile = await this.getUserProfile(data.user.id);
 
-            // Fallback chain: perfil de BD → metadata del registro → email
-            const resolvedUsername = profile?.username
-                || data.user.user_metadata?.username
-                || email;
+            // Cadena de fallback robusta: perfil BD -> metadata -> email -> fallback final
+            const resolvedUsername = profile?.username 
+                || data.user.user_metadata?.username 
+                || data.user.raw_user_meta_data?.username
+                || (data.user.email ? data.user.email.split('@')[0] : null)
+                || email.split('@')[0]
+                || 'Usuario';
 
             return {
                 success: true,
                 user: {
                     id: data.user.id,
                     username: resolvedUsername,
-                    email: email,
+                    email: data.user.email || email,
                     balance: profile?.balance || 10000,
-                    joinDate: profile?.created_at || new Date().toISOString()
+                    joinDate: profile?.created_at || data.user.created_at || new Date().toISOString()
                 }
             };
         } catch (error) {
@@ -263,9 +270,10 @@ export const authService = {
             success: true,
             user: {
                 id: user.id,
-                username: user.username,
+                username: user.username || user.email.split('@')[0] || 'Usuario',
+                email: user.email,
                 balance: user.balance || 10000,
-                joinDate: user.joinDate
+                joinDate: user.joinDate || new Date().toISOString()
             }
         };
     },

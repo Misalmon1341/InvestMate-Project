@@ -176,13 +176,15 @@ const app = {
         const session = await authService.getSession();
         if (session?.user) {
             const user = session.user;
-            // Obtener perfil desde Supabase
+            // Obtener perfil desde Supabase (opcional)
             const profile = await authService.getUserProfile(user.id);
 
-            // Fallback chain para username: perfil BD → metadata auth → email
+            // Fallback chain robusta para username: perfil BD → metadata auth → email -> fallback
             const resolvedUsername = profile?.username
                 || user.user_metadata?.username
-                || user.email;
+                || user.raw_user_meta_data?.username
+                || (user.email ? user.email.split('@')[0] : null)
+                || 'Usuario';
 
             this.state.currentUser = {
                 id: user.id,
