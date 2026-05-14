@@ -296,42 +296,53 @@ const app = {
     },
 
     async login() {
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
+        const emailInput = document.getElementById('login-email');
+        const passwordInput = document.getElementById('login-password');
+        
+        if (!emailInput || !passwordInput) return;
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
         const submitBtn = document.querySelector('#login-form button[type="submit"]');
-        const originalBtnText = submitBtn.textContent;
+        const originalBtnText = submitBtn ? submitBtn.textContent : 'Entrar';
 
         try {
             // Estado de carga
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Iniciando sesión...';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Iniciando sesión...';
+            }
 
             const result = await authService.login(email, password);
 
-            if (result.success) {
+            if (result.success && result.user) {
+                // Actualizar estado básico inmediatamente
                 this.state.currentUser = result.user;
                 this.state.currentUserId = result.user.id;
                 this.state.balance = result.user.balance || 10000;
 
-                // Cargar datos del usuario (con try/catch interno para no bloquear el login)
-                try {
-                    await this.loadUserData();
-                } catch (dataError) {
-                    console.error('Error cargando datos del usuario post-login:', dataError);
-                    // Continuamos aunque falle la carga de datos secundarios
-                }
-
-                this.showToast(`¡Bienvenido ${result.user.username}!`, 'success');
+                // NAVEGACIÓN INMEDIATA
                 this.navigate('main-menu-screen');
+                this.showToast(`¡Bienvenido ${result.user.username || 'Usuario'}!`, 'success');
+
+                // Cargar datos pesados en segundo plano para no bloquear la UI
+                this.loadUserData().then(() => {
+                    this.updateUI(); // Refrescar UI cuando los datos lleguen
+                }).catch(err => {
+                    console.warn('Error cargando datos en segundo plano:', err);
+                });
+                
             } else {
                 this.showToast(result.error || 'Credenciales incorrectas', 'error');
             }
         } catch (error) {
             console.error('Error crítico en login:', error);
-            this.showToast('Error inesperado al iniciar sesión', 'error');
+            this.showToast('Error de conexión o del servidor', 'error');
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
         }
     },
 

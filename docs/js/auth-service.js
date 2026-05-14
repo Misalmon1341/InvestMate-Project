@@ -60,10 +60,17 @@ export const authService = {
         }
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            // Añadir un timeout de 10 segundos a la autenticación
+            const authPromise = supabase.auth.signInWithPassword({
                 email,
                 password
             });
+
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+            );
+
+            const { data, error } = await Promise.race([authPromise, timeoutPromise]);
 
             if (error) throw error;
 
@@ -71,8 +78,13 @@ export const authService = {
                 throw new Error('No se pudo recuperar la información del usuario');
             }
 
-            // Obtener perfil del usuario (opcional, no debe bloquear el login)
-            const profile = await this.getUserProfile(data.user.id);
+            // Devolver éxito inmediatamente, el perfil se puede cargar después o resolverse aquí
+            // Pero no queremos que getUserProfile bloquee si la red va lenta
+            const profilePromise = this.getUserProfile(data.user.id).catch(() => null);
+            const profile = await Promise.race([
+                profilePromise,
+                new Promise(resolve => setTimeout(() => resolve(null), 2000)) // Máximo 2s para el perfil
+            ]);
 
             // Cadena de fallback robusta: perfil BD -> metadata -> email -> fallback final
             const resolvedUsername = profile?.username 
@@ -94,9 +106,13 @@ export const authService = {
             };
         } catch (error) {
             console.error('Error en login:', error);
+            let errorMessage = error.message;
+            if (error.message === 'TIMEOUT') {
+                errorMessage = 'La conexión con el servidor ha tardado demasiado. Inténtalo de nuevo.';
+            }
             return {
                 success: false,
-                error: this._mapAuthError(error)
+                error: this._mapAuthError({ message: errorMessage })
             };
         }
     },
