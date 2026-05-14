@@ -35,16 +35,29 @@ export const portfolioService = {
     async buyAsset(userId, product, amount) {
         const shares = amount / product.price;
 
-        if (!isConnected) {
+        // Validar si es un UUID (Supabase) o un ID local
+        const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        
+        if (!isConnected || !isUUID(userId)) {
+            console.warn('Usando almacenamiento local para compra (ID no es UUID o no hay conexión)');
             return this._buyLocal(userId, product, amount, shares);
         }
 
         try {
+            // Asegurarnos de que el usuario está realmente autenticado en Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                throw new Error('Sesión de Supabase no encontrada');
+            }
+            
+            // Usar el ID de la sesión activa para evitar discrepancias
+            const activeUserId = user.id;
+
             // Verificar si ya tiene este activo
             const { data: existing } = await supabase
                 .from('portfolio')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_id', activeUserId)
                 .eq('product_id', product.id)
                 .single();
 
@@ -70,7 +83,7 @@ export const portfolioService = {
                 const { error } = await supabase
                     .from('portfolio')
                     .insert({
-                        user_id: userId,
+                        user_id: activeUserId,
                         product_id: product.id,
                         product_name: product.name,
                         product_symbol: product.symbol,
@@ -84,11 +97,16 @@ export const portfolioService = {
             }
 
             // Registrar transacción
-            await this._recordTransaction(userId, product, 'buy', shares, product.price, amount);
+            await this._recordTransaction(activeUserId, product, 'buy', shares, product.price, amount);
 
             return { success: true, shares };
         } catch (error) {
             console.error('Error en compra:', error);
+            // Fallback a local si hay error de base de datos (como el FK violation)
+            if (error.message.includes('foreign key constraint')) {
+                console.warn('Fallo de FK en Supabase, intentando guardado local...');
+                return this._buyLocal(userId, product, amount, shares);
+            }
             return { success: false, error: error.message };
         }
     },
@@ -97,16 +115,27 @@ export const portfolioService = {
      * Vender activo
      */
     async sellAsset(userId, productId, sharesToSell, currentPrice) {
-        if (!isConnected) {
+        // Validar si es un UUID (Supabase) o un ID local
+        const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+        if (!isConnected || !isUUID(userId)) {
             return this._sellLocal(productId, sharesToSell, currentPrice);
         }
 
         try {
+            // Asegurarnos de que el usuario está realmente autenticado en Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                throw new Error('Sesión de Supabase no encontrada');
+            }
+            
+            const activeUserId = user.id;
+
             // Obtener el activo
             const { data: asset } = await supabase
                 .from('portfolio')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_id', activeUserId)
                 .eq('product_id', productId)
                 .single();
 
@@ -146,7 +175,7 @@ export const portfolioService = {
             }
 
             // Registrar transacción
-            await this._recordTransaction(userId, asset, 'sell', sharesToSell, currentPrice, saleValue);
+            await this._recordTransaction(activeUserId, asset, 'sell', sharesToSell, currentPrice, saleValue);
 
             return { success: true, saleValue };
         } catch (error) {
@@ -249,7 +278,9 @@ export const portfolioService = {
     },
 
     async _recordTransaction(userId, product, type, shares, price, total) {
-        if (!isConnected) {
+        const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+        if (!isConnected || !isUUID(userId)) {
             const transactions = JSON.parse(localStorage.getItem('invesmate_transactions') || '[]');
             transactions.push({
                 id: `tx_${Date.now()}`,
