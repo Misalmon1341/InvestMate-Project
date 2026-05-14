@@ -10,8 +10,11 @@ export const portfolioService = {
      * Obtener portfolio de un usuario
      */
     async getPortfolio(userId) {
-        // Siempre obtener datos locales como base o respaldo
-        const localPortfolio = JSON.parse(localStorage.getItem('invesmate_portfolio') || '[]');
+        if (!userId) return [];
+        
+        // Clave específica por usuario para evitar mezclar datos de diferentes cuentas
+        const localKey = `invesmate_portfolio_${userId}`;
+        const localPortfolio = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_portfolio') || '[]');
         
         if (!isConnected) {
             return localPortfolio;
@@ -26,20 +29,27 @@ export const portfolioService = {
 
             if (error) throw error;
             
-            // Si hay datos en Supabase, podemos elegir mostrarlos o combinarlos
-            // Por simplicidad y robustez, combinamos los activos locales que no estén en Supabase
-            // o simplemente concatenamos si son diferentes proyectos.
-            // Aquí optamos por priorizar Supabase pero añadir los locales "pendientes".
             const supabaseData = data || [];
             
-            // Filtrar locales que ya existen en Supabase (por product_id)
-            const uniqueLocals = localPortfolio.filter(lp => 
-                !supabaseData.some(sd => sd.product_id === lp.product_id || sd.product_id == lp.id)
-            );
+            // Fusión inteligente: Mantener lo de Supabase y añadir lo local que no se ha sincronizado aún
+            const merged = [...supabaseData];
+            
+            localPortfolio.forEach(lp => {
+                const lpId = lp.product_id || lp.id;
+                const alreadyInSupabase = supabaseData.some(sd => sd.product_id == lpId);
+                
+                if (!alreadyInSupabase) {
+                    merged.push({
+                        ...lp,
+                        product_id: lpId, // Asegurar consistencia de nombres
+                        is_local: true
+                    });
+                }
+            });
 
-            return [...supabaseData, ...uniqueLocals];
+            return merged;
         } catch (error) {
-            console.error('Error obteniendo portfolio de Supabase, usando local:', error);
+            console.error('Error sincronizando portfolio, usando local:', error);
             return localPortfolio;
         }
     },
@@ -256,26 +266,32 @@ export const portfolioService = {
     // MÉTODOS LOCALES (FALLBACK)
     // ========================================
     _buyLocal(userId, product, amount, shares) {
-        let portfolio = JSON.parse(localStorage.getItem('invesmate_portfolio') || '[]');
+        const localKey = userId ? `invesmate_portfolio_${userId}` : 'invesmate_portfolio';
+        let portfolio = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_portfolio') || '[]');
 
-        const existing = portfolio.find(p => p.id === product.id);
+        const existing = portfolio.find(p => (p.product_id || p.id) == product.id);
         if (existing) {
-            existing.shares += shares;
-            existing.avgPrice = ((existing.shares - shares) * existing.avgPrice + amount) / existing.shares;
-            existing.value += amount;
+            const currentShares = existing.shares || 0;
+            const currentAvgPrice = existing.avg_price || existing.avgPrice || 0;
+            const currentInvested = existing.invested_value || existing.value || 0;
+
+            existing.shares = currentShares + shares;
+            existing.avg_price = ((currentShares * currentAvgPrice) + amount) / (currentShares + shares);
+            existing.invested_value = currentInvested + amount;
         } else {
             portfolio.push({
-                id: product.id,
-                name: product.name,
-                symbol: product.symbol,
-                category: product.category,
-                shares,
-                avgPrice: product.price,
-                value: amount
+                product_id: product.id,
+                product_name: product.name,
+                product_symbol: product.symbol,
+                product_category: product.category,
+                shares: shares,
+                avg_price: product.price,
+                invested_value: amount,
+                created_at: new Date().toISOString()
             });
         }
 
-        localStorage.setItem('invesmate_portfolio', JSON.stringify(portfolio));
+        localStorage.setItem(localKey, JSON.stringify(portfolio));
         return { success: true, shares };
     },
 

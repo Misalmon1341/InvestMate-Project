@@ -179,8 +179,9 @@ export const authService = {
      * Obtener perfil de usuario desde la base de datos
      */
     async getUserProfile(userId) {
-        // Obtener balance local como respaldo
-        const localBalance = localStorage.getItem('invesmate_balance');
+        // Obtener balance local específico del usuario
+        const balanceKey = userId ? `invesmate_balance_${userId}` : 'invesmate_balance';
+        const localBalance = localStorage.getItem(balanceKey) || localStorage.getItem('invesmate_balance');
         
         if (!isConnected) return { id: userId, balance: localBalance ? JSON.parse(localBalance) : 10000 };
 
@@ -198,7 +199,7 @@ export const authService = {
                 return { id: userId, balance: localBalance ? JSON.parse(localBalance) : 10000 };
             }
 
-            // Si el balance local es más reciente/diferente (opcional, aquí priorizamos BD pero podemos avisar)
+            // Devolver datos de la BD (que es la fuente de verdad principal)
             return data;
         } catch (error) {
             console.error('Error obteniendo perfil:', error);
@@ -210,8 +211,9 @@ export const authService = {
      * Actualizar balance del usuario
      */
     async updateBalance(userId, newBalance) {
-        // Guardar siempre en local como respaldo inmediato
-        localStorage.setItem('invesmate_balance', JSON.stringify(newBalance));
+        // Guardar siempre en local con clave específica por usuario
+        const balanceKey = userId ? `invesmate_balance_${userId}` : 'invesmate_balance';
+        localStorage.setItem(balanceKey, JSON.stringify(newBalance));
 
         const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
@@ -221,8 +223,8 @@ export const authService = {
 
         try {
             // Verificar sesión activa
-            const { data: { user } } = await supabase.auth.getUser();
-            const activeUserId = user ? user.id : userId;
+            const { data: authData } = await supabase.auth.getUser();
+            const activeUserId = authData?.user ? authData.user.id : userId;
 
             const { error } = await supabase
                 .from('profiles')
@@ -233,7 +235,6 @@ export const authService = {
             return { success: true };
         } catch (error) {
             console.error('Error actualizando balance en Supabase:', error);
-            // Ya guardamos en local al principio, así que devolvemos éxito para no bloquear la UI
             return { success: true }; 
         }
     },
