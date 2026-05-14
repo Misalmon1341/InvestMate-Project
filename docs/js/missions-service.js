@@ -48,7 +48,12 @@ export const missionsService = {
             // Si no tiene misiones, inicializar con las predeterminadas
             if (!userMissions || userMissions.length === 0) {
                 await this.initializeMissions(userId);
-                return this.getUserMissions(userId);
+                // En lugar de recursión, devolvemos misiones vacías/base para evitar bucles infinitos
+                return MISSIONS_DATA.map(m => ({
+                    ...m,
+                    completed: false,
+                    completedAt: null
+                }));
             }
 
             // Combinar con datos base para tener iconos y tipos
@@ -87,7 +92,12 @@ export const missionsService = {
 
             if (!userAchievements || userAchievements.length === 0) {
                 await this.initializeAchievements(userId);
-                return this.getUserAchievements(userId);
+                // Evitar recursión infinita
+                return ACHIEVEMENTS_DATA.map(a => ({
+                    ...a,
+                    unlocked: false,
+                    unlockedAt: null
+                }));
             }
 
             return userAchievements.map(ua => {

@@ -173,30 +173,38 @@ const app = {
     // AUTENTICACIÓN CON SUPABASE
     // ========================================
     async checkAuthSession() {
-        const session = await authService.getSession();
-        if (session?.user) {
-            const user = session.user;
-            // Obtener perfil desde Supabase (opcional)
-            const profile = await authService.getUserProfile(user.id);
+        try {
+            const session = await authService.getSession();
+            if (session?.user) {
+                const user = session.user;
+                // Obtener perfil desde Supabase (opcional)
+                const profile = await authService.getUserProfile(user.id);
 
-            // Fallback chain robusta para username: perfil BD → metadata auth → email -> fallback
-            const resolvedUsername = profile?.username
-                || user.user_metadata?.username
-                || user.raw_user_meta_data?.username
-                || (user.email ? user.email.split('@')[0] : null)
-                || 'Usuario';
+                // Fallback chain robusta para username: perfil BD → metadata auth → email -> fallback
+                const resolvedUsername = profile?.username
+                    || user.user_metadata?.username
+                    || user.raw_user_meta_data?.username
+                    || (user.email ? user.email.split('@')[0] : null)
+                    || 'Usuario';
 
-            this.state.currentUser = {
-                id: user.id,
-                username: resolvedUsername,
-                email: user.email,
-                balance: profile?.balance || 10000
-            };
-            this.state.currentUserId = user.id;
-            this.state.balance = profile?.balance || 10000;
+                this.state.currentUser = {
+                    id: user.id,
+                    username: resolvedUsername,
+                    email: user.email,
+                    balance: profile?.balance || 10000
+                };
+                this.state.currentUserId = user.id;
+                this.state.balance = profile?.balance || 10000;
 
-            // Cargar portfolio y misiones desde Supabase
-            await this.loadUserData();
+                // Cargar portfolio y misiones desde Supabase (silenciosamente)
+                try {
+                    await this.loadUserData();
+                } catch (e) {
+                    console.warn('No se pudieron cargar todos los datos del usuario al inicio:', e);
+                }
+            }
+        } catch (error) {
+            console.error('Error verificando sesión inicial:', error);
         }
     },
 
@@ -290,21 +298,40 @@ const app = {
     async login() {
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
+        const submitBtn = document.querySelector('#login-form button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
 
-        const result = await authService.login(email, password);
+        try {
+            // Estado de carga
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Iniciando sesión...';
 
-        if (result.success) {
-            this.state.currentUser = result.user;
-            this.state.currentUserId = result.user.id;
-            this.state.balance = result.user.balance || 10000;
+            const result = await authService.login(email, password);
 
-            // Cargar datos del usuario
-            await this.loadUserData();
+            if (result.success) {
+                this.state.currentUser = result.user;
+                this.state.currentUserId = result.user.id;
+                this.state.balance = result.user.balance || 10000;
 
-            this.showToast(`¡Bienvenido ${result.user.username}!`, 'success');
-            this.navigate('main-menu-screen');
-        } else {
-            this.showToast(result.error || 'Credenciales incorrectas', 'error');
+                // Cargar datos del usuario (con try/catch interno para no bloquear el login)
+                try {
+                    await this.loadUserData();
+                } catch (dataError) {
+                    console.error('Error cargando datos del usuario post-login:', dataError);
+                    // Continuamos aunque falle la carga de datos secundarios
+                }
+
+                this.showToast(`¡Bienvenido ${result.user.username}!`, 'success');
+                this.navigate('main-menu-screen');
+            } else {
+                this.showToast(result.error || 'Credenciales incorrectas', 'error');
+            }
+        } catch (error) {
+            console.error('Error crítico en login:', error);
+            this.showToast('Error inesperado al iniciar sesión', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
         }
     },
 
