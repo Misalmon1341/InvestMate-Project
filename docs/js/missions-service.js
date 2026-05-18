@@ -32,8 +32,14 @@ const ACHIEVEMENTS_DATA = [
 export const missionsService = {
     async getUserMissions(userId) {
         const localKey = userId ? `invesmate_missions_${userId}` : 'invesmate_missions';
+        
         if (!isConnected) {
-            return JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_missions') || '[]');
+            let localMissions = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_missions') || 'null');
+            if (!localMissions || localMissions.length === 0) {
+                localMissions = MISSIONS_DATA.map(m => ({ ...m, completed: false, completedAt: null }));
+                localStorage.setItem(localKey, JSON.stringify(localMissions));
+            }
+            return localMissions;
         }
 
         try {
@@ -78,7 +84,12 @@ export const missionsService = {
             return mergedMissions;
         } catch (error) {
             console.error('Error obteniendo misiones, recurriendo a local:', error);
-            return JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_missions') || '[]');
+            let localMissions = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_missions') || 'null');
+            if (!localMissions || localMissions.length === 0) {
+                localMissions = MISSIONS_DATA.map(m => ({ ...m, completed: false, completedAt: null }));
+                localStorage.setItem(localKey, JSON.stringify(localMissions));
+            }
+            return localMissions;
         }
     },
 
@@ -87,8 +98,14 @@ export const missionsService = {
      */
     async getUserAchievements(userId) {
         const localKey = userId ? `invesmate_achievements_${userId}` : 'invesmate_achievements';
+        
         if (!isConnected) {
-            return JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_achievements') || '[]');
+            let localAchievements = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_achievements') || 'null');
+            if (!localAchievements || localAchievements.length === 0) {
+                localAchievements = ACHIEVEMENTS_DATA.map(a => ({ ...a, unlocked: false, unlockedAt: null }));
+                localStorage.setItem(localKey, JSON.stringify(localAchievements));
+            }
+            return localAchievements;
         }
 
         try {
@@ -128,7 +145,12 @@ export const missionsService = {
             return mergedAchievements;
         } catch (error) {
             console.error('Error obteniendo logros, recurriendo a local:', error);
-            return JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_achievements') || '[]');
+            let localAchievements = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_achievements') || 'null');
+            if (!localAchievements || localAchievements.length === 0) {
+                localAchievements = ACHIEVEMENTS_DATA.map(a => ({ ...a, unlocked: false, unlockedAt: null }));
+                localStorage.setItem(localKey, JSON.stringify(localAchievements));
+            }
+            return localAchievements;
         }
     },
 
