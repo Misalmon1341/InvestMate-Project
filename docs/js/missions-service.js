@@ -248,15 +248,18 @@ export const missionsService = {
                 return { success: false, alreadyCompleted: true };
             }
 
-            // Marcar como completada
+            // Marcar como completada usando upsert para asegurar que se cree si no existe
             const { error: updateError } = await supabase
                 .from('user_missions')
-                .update({
+                .upsert({
+                    user_id: userId,
+                    mission_id: missionId,
+                    title: baseMission ? baseMission.title : `Misión #${missionId}`,
+                    description: baseMission ? baseMission.description : '',
+                    reward: rewardAmount,
                     completed: true,
                     completed_at: new Date().toISOString()
-                })
-                .eq('user_id', userId)
-                .eq('mission_id', missionId);
+                }, { onConflict: 'user_id, mission_id' });
 
             if (updateError) throw updateError;
 
