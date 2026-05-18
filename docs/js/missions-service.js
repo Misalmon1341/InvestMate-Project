@@ -176,7 +176,7 @@ export const missionsService = {
             }
 
             // Marcar como completada
-            await supabase
+            const { error: updateError } = await supabase
                 .from('user_missions')
                 .update({
                     completed: true,
@@ -184,6 +184,11 @@ export const missionsService = {
                 })
                 .eq('user_id', userId)
                 .eq('mission_id', missionId);
+                
+            if (updateError) {
+                console.error('Error actualizando estado en Supabase:', updateError);
+                throw updateError;
+            }
 
             // Actualizar balance del usuario
             await supabase.rpc('increment_balance', {

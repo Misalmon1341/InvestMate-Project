@@ -668,7 +668,50 @@ const app = {
     // ========================================
     // MISIONES
     // ========================================
+    evaluateMissionConditions() {
+        if (!this.state.missions) return;
+        
+        const portfolioValue = this.state.portfolio.reduce((sum, item) => {
+            const prod = this.products.find(p => p.id === (item.product_id || p.id));
+            return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
+        }, 0);
+        const uniqueAssets = this.state.portfolio.length;
+        const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
+        const articlesRead = this.state.articlesRead || 0;
+        const hasBigETF = this.state.portfolio.some(p => {
+            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+            return prod && prod.category === 'etfs' && (p.shares * prod.price) >= 5000;
+        });
+        const cryptoCount = this.state.portfolio.filter(p => {
+            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+            return prod && prod.category === 'crypto';
+        }).length;
+        
+        this.state.missions.forEach(mission => {
+            if (mission.completed) {
+                mission.readyToClaim = false;
+                return;
+            }
+            
+            switch (mission.id) {
+                case 1: mission.readyToClaim = (uniqueAssets >= 1 && articlesRead >= 1); break;
+                case 2: mission.readyToClaim = (uniqueAssets >= 5); break;
+                case 3: mission.readyToClaim = hasBigETF; break;
+                case 4: mission.readyToClaim = (cryptoCount >= 3); break;
+                case 5: mission.readyToClaim = (portfolioValue >= 50000); break;
+                case 6: mission.readyToClaim = (articlesRead >= 10); break;
+                case 7: mission.readyToClaim = (totalOps >= 15); break;
+                case 8: 
+                    const othersCompleted = this.state.missions.filter(m => m.completed && m.id !== 8).length;
+                    mission.readyToClaim = (othersCompleted >= 7);
+                    break;
+            }
+        });
+    },
+
     renderMissions() {
+        this.evaluateMissionConditions();
+        
         const container = document.getElementById('missions-list');
         const completed = this.state.missions.filter(m => m.completed).length;
         const total = this.state.missions.length;
@@ -677,20 +720,36 @@ const app = {
         document.getElementById('missions-total').textContent = total;
         document.getElementById('missions-progress-fill').style.width = `${(completed / total) * 100}%`;
 
-        container.innerHTML = this.state.missions.map(mission => `
-            <div class="mission-item ${mission.completed ? 'completed' : 'pending'}"
-                 onclick="app.showMissionDetail(${mission.id})">
-                <img class="mission-icon" src="${mission.icon}" alt="Icono">
-                <div class="mission-info">
-                    <span class="mission-title">${mission.title}</span>
-                    <span class="mission-desc">${mission.description}</span>
+        container.innerHTML = this.state.missions.map(mission => {
+            let statusClass = 'pending';
+            let badgeText = `+$${mission.reward}`;
+            let badgeStyle = '';
+            
+            if (mission.completed) {
+                statusClass = 'completed';
+                badgeText = '✓';
+            } else if (mission.readyToClaim) {
+                statusClass = 'ready-to-claim';
+                badgeText = '¡Reclamar!';
+                badgeStyle = 'background: var(--primary); color: white;';
+            }
+            
+            return `
+                <div class="mission-item ${statusClass}"
+                     onclick="app.showMissionDetail(${mission.id})">
+                    <img class="mission-icon" src="${mission.icon}" alt="Icono">
+                    <div class="mission-info">
+                        <span class="mission-title">${mission.title}</span>
+                        <span class="mission-desc">${mission.description}</span>
+                    </div>
+                    <span class="mission-reward-badge" style="${badgeStyle}">${badgeText}</span>
                 </div>
-                <span class="mission-reward-badge">+$${mission.reward}</span>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     },
 
     showMissionDetail(missionId) {
+        this.evaluateMissionConditions();
         const mission = this.state.missions.find(m => m.id === missionId);
         if (!mission) return;
 
@@ -703,9 +762,15 @@ const app = {
         if (mission.completed) {
             btn.textContent = 'Completada ✓';
             btn.disabled = true;
-        } else {
-            btn.textContent = 'Comenzar';
+            btn.className = 'btn-secondary btn-large';
+        } else if (mission.readyToClaim) {
+            btn.textContent = 'Reclamar Recompensa';
             btn.disabled = false;
+            btn.className = 'btn-primary btn-large';
+        } else {
+            btn.textContent = 'En Progreso';
+            btn.disabled = true;
+            btn.className = 'btn-secondary btn-large';
         }
 
         document.getElementById('mission-detail-screen').classList.add('active');
@@ -713,12 +778,26 @@ const app = {
 
     async completeMission() {
         if (!this.state.currentMission || this.state.currentMission.completed) return;
+        
+        // Verificar si la misión está lista para ser reclamada
+        this.evaluateMissionConditions();
+        const missionToComplete = this.state.missions.find(m => m.id === this.state.currentMission.id);
+        
+        if (!missionToComplete || !missionToComplete.readyToClaim) {
+            this.showToast('Aún no has cumplido los requisitos de esta misión', 'error');
+            return;
+        }
+        
+        const btn = document.getElementById('mission-action-btn');
+        btn.textContent = 'Reclamando...';
+        btn.disabled = true;
 
         // Completar misión en Supabase
         const result = await missionsService.completeMission(this.state.currentUserId, this.state.currentMission.id);
 
         if (result.success) {
             this.state.currentMission.completed = true;
+            this.state.currentMission.readyToClaim = false;
             this.state.balance += result.reward;
 
             // Actualizar balance en Supabase
@@ -729,101 +808,27 @@ const app = {
 
             this.closeModal();
             this.showToast(`¡Misión completada! +$${result.reward}`, 'success');
+            
+            // Re-evaluar por si se desbloqueó la misión final
+            this.evaluateMissionConditions();
             this.renderMissions();
-
-            // Verificar misión de "Maestro de Invesmate"
-            await this.checkAllMissionsComplete();
+            await this.checkAchievements();
         } else {
+            btn.textContent = 'Reclamar Recompensa';
+            btn.disabled = false;
             this.showToast('Error al completar misión', 'error');
             this.closeModal();
-        }
-    },
-
-    async checkAllMissionsComplete() {
-        const completed = this.state.missions.filter(m => m.completed).length;
-        if (completed >= this.state.missions.length) {
-            await this.completeMissionById(8);
         }
     },
 
     async checkMissions(actionType, product) {
         if (!this.state.currentUserId) return;
 
-        // Misión 1: Analista Principiante (1 artículo leído y 1 compra)
-        if (actionType === 'purchase' && this.state.portfolio.length >= 1 && this.state.articlesRead >= 1) {
-            await this.completeMissionById(1);
-        }
-
-        // Misión 2: Diversificación Estratégica (5 activos diferentes)
-        if (this.state.portfolio.length >= 5) {
-            await this.completeMissionById(2);
-        }
-
-        // Misión 3: Fondo de Seguridad (ETF > $5,000)
-        const hasBigETF = this.state.portfolio.some(p => {
-            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
-            if (!prod || prod.category !== 'etfs') return false;
-            return (p.shares * prod.price) >= 5000;
-        });
-        if (hasBigETF) {
-            await this.completeMissionById(3);
-        }
-
-        // Misión 4: Portafolio Crypto (3 cryptos)
-        const cryptoCount = this.state.portfolio.filter(p => {
-            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
-            return prod && prod.category === 'crypto';
-        }).length;
-        if (cryptoCount >= 3) {
-            await this.completeMissionById(4);
-        }
-
-        // Misión 5: Magnate en Ascenso ($50,000 portafolio)
-        const portfolioValue = this.state.portfolio.reduce((sum, item) => {
-            const prod = this.products.find(p => p.id === (item.product_id || p.id));
-            return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
-        }, 0);
-        if (portfolioValue >= 50000) {
-            await this.completeMissionById(5);
-        }
-
-        // Misión 6: Académico Financiero (10 artículos leídos)
-        if (this.state.articlesRead >= 10) {
-            await this.completeMissionById(6);
-        }
-
-        // Misión 7: Trader Experimentado (15 operaciones)
-        const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
-        if (totalOps >= 15) {
-            await this.completeMissionById(7);
-        }
-
+        // Ya no completamos las misiones automáticamente.
+        // Solo evaluamos los logros, ya que las misiones ahora se reclaman manualmente.
+        
         // Verificar logros después de cada acción
         await this.checkAchievements();
-    },
-
-    async completeMissionById(id) {
-        const mission = this.state.missions.find(m => m.id === id);
-        if (mission && !mission.completed) {
-            // Completar en Supabase
-            const result = await missionsService.completeMission(this.state.currentUserId, id);
-
-            if (result.success) {
-                mission.completed = true;
-                this.state.balance += result.reward;
-
-                // Actualizar balance en Supabase
-                await authService.updateBalance(this.state.currentUserId, this.state.balance);
-
-                // Recargar misiones
-                this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
-
-                this.showToast(`¡Misión desbloqueada: ${mission.title}! +$${result.reward}`, 'success');
-
-                // Verificar si todas las misiones están completas
-                await this.checkAllMissionsComplete();
-            }
-        }
     },
 
     // ========================================
