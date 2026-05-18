@@ -1317,3 +1317,67 @@ body.light-mode .btn-primary {
     }
 }
 
+/* ========================================
+   LOGROS (ACHIEVEMENTS)
+   ======================================== */
+.achievements-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.achievement-item {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.achievement-item.locked {
+    opacity: 0.6;
+}
+
+.achievement-item.locked .achievement-icon {
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
+
+.achievement-item.unlocked {
+    border: 1px solid rgba(0, 208, 156, 0.6);
+    background: linear-gradient(135deg, var(--bg-card), rgba(0, 208, 156, 0.1));
+    box-shadow: 0 4px 15px rgba(0, 208, 156, 0.15);
+    opacity: 1;
+}
+
+.achievement-item.unlocked .achievement-icon {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.2);
+    animation: claim-glow 2s infinite alternate;
+}
+
+.achievement-icon {
+    font-size: 2.2rem;
+    transition: all 0.4s ease;
+}
+
+.achievement-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.achievement-title {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.achievement-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
