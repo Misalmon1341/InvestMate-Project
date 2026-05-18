@@ -57,18 +57,18 @@ export const missionsService = {
                 return baseMissions;
             }
 
-            // Combinar con datos base para tener iconos y tipos
+            // Combinar con datos base para tener iconos, tipos y respaldos fuertes contra esquemas desactualizados
             const mergedMissions = userMissions.map(um => {
-                const base = MISSIONS_DATA.find(m => m.id === um.mission_id);
+                const base = MISSIONS_DATA.find(m => m.id === um.mission_id) || {};
                 return {
                     id: um.mission_id,
-                    title: um.title,
-                    description: um.description,
-                    reward: um.reward,
-                    icon: base?.icon || '🎯',
-                    type: base?.type || 'unknown',
-                    completed: um.completed,
-                    completedAt: um.completed_at
+                    title: um.title || base.title || `Misión #${um.mission_id}`,
+                    description: um.description || base.description || 'Completa esta misión para ganar.',
+                    reward: um.reward || base.reward || 1000,
+                    icon: base.icon || '🎯',
+                    type: base.type || 'unknown',
+                    completed: um.completed || false,
+                    completedAt: um.completed_at || null
                 };
             });
 
@@ -111,14 +111,14 @@ export const missionsService = {
             }
 
             const mergedAchievements = userAchievements.map(ua => {
-                const base = ACHIEVEMENTS_DATA.find(a => a.id === ua.achievement_id);
+                const base = ACHIEVEMENTS_DATA.find(a => a.id === ua.achievement_id) || {};
                 return {
                     id: ua.achievement_id,
-                    name: ua.name,
-                    description: ua.description,
-                    icon: base?.icon || '🏆',
-                    unlocked: ua.unlocked,
-                    unlockedAt: ua.unlocked_at
+                    name: ua.name || base.name || `Logro #${ua.achievement_id}`,
+                    description: ua.description || base.description || 'Logro desbloqueado.',
+                    icon: base.icon || '🏆',
+                    unlocked: ua.unlocked || false,
+                    unlockedAt: ua.unlocked_at || null
                 };
             });
 
