@@ -742,17 +742,34 @@ const app = {
         document.getElementById('missions-total').textContent = total;
         document.getElementById('missions-progress-fill').style.width = `${(completed / total) * 100}%`;
 
-        container.innerHTML = this.state.missions.map(mission => `
-            <div class="mission-item ${mission.completed ? 'completed' : 'pending'}"
-                 onclick="app.showMissionDetail(${mission.id})">
-                <img class="mission-icon" src="${mission.icon}" alt="Icono">
-                <div class="mission-info">
-                    <span class="mission-title">${mission.title}</span>
-                    <span class="mission-desc">${mission.description}</span>
+        container.innerHTML = this.state.missions.map(mission => {
+            const satisfied = this.isMissionSatisfied(mission.id);
+            let statusClass = 'pending';
+            let badgeText = `+$${mission.reward}`;
+            let badgeClass = 'mission-reward-badge';
+
+            if (mission.completed) {
+                statusClass = 'completed';
+                badgeText = 'Completada ✓';
+                badgeClass = 'mission-reward-badge completed';
+            } else if (satisfied) {
+                statusClass = 'satisfied';
+                badgeText = 'Reclamar! 🎁';
+                badgeClass = 'mission-reward-badge satisfied-badge';
+            }
+
+            return `
+                <div class="mission-item ${statusClass}"
+                     onclick="app.showMissionDetail(${mission.id})">
+                    <img class="mission-icon" src="${mission.icon}" alt="Icono">
+                    <div class="mission-info">
+                        <span class="mission-title">${mission.title}</span>
+                        <span class="mission-desc">${mission.description}</span>
+                    </div>
+                    <span class="${badgeClass}">${badgeText}</span>
                 </div>
-                <span class="mission-reward-badge">+$${mission.reward}</span>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     },
 
     isMissionSatisfied(missionId) {
@@ -858,10 +875,13 @@ const app = {
 
                 this.closeModal();
                 this.showToast(`¡Misión completada: ${this.state.currentMission.title}! +$${result.reward}`, 'success');
+                
+                // Actualizar balance e interfaz completa
+                this.updateUI();
                 this.renderMissions();
 
-                // Verificar misiones resultantes y logros
-                await this.checkMissions();
+                // Verificar logros resultantes
+                await this.checkAchievements();
             } else {
                 this.showToast('Error al completar misión', 'error');
                 this.closeModal();
@@ -880,46 +900,47 @@ const app = {
     },
 
     async checkAllMissionsComplete() {
-        const completed = this.state.missions.filter(m => m.completed && m.id !== 8).length;
-        if (completed >= 7) {
-            await this.completeMissionById(8);
-        }
+        // En lugar de autocompletar la misión 8 en segundo plano, dejamos que el usuario
+        // vea que la misión 8 está satisfecha y la reclame él mismo.
+        await this.checkAchievements();
     },
 
     async checkMissions() {
         if (!this.state.currentUserId) return;
 
-        // Comprobar y autocompletar silenciosamente misiones cuyos criterios ya se cumplan
-        for (let id = 1; id <= 8; id++) {
-            if (this.isMissionSatisfied(id)) {
-                await this.completeMissionById(id);
-            }
-        }
-
-        // Verificar logros
+        // Verificar logros automáticamente en segundo plano
         await this.checkAchievements();
+
+        // Refrescar balance, profile e interfaz completa para asegurar coherencia
+        this.updateUI();
+
+        // Si la pantalla de misiones está activa, volver a renderizar para mostrar cuáles se pueden reclamar
+        if (document.getElementById('missions-screen').classList.contains('active')) {
+            this.renderMissions();
+        }
     },
 
     async completeMissionById(id) {
+        // Método de conveniencia mantenido para fallback local/remoto o sincronización en lote
         const mission = this.state.missions.find(m => m.id === id);
         if (mission && !mission.completed) {
-            // Completar en Supabase
             const result = await missionsService.completeMission(this.state.currentUserId, id);
 
             if (result.success) {
                 mission.completed = true;
                 this.state.balance += result.reward;
-
-                // Actualizar balance en Supabase
                 await authService.updateBalance(this.state.currentUserId, this.state.balance);
-
-                // Recargar misiones
+                
                 this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
-
+                
                 this.showToast(`¡Misión desbloqueada: ${mission.title}! +$${result.reward}`, 'success');
-
-                // Verificar si todas las misiones están completas
-                await this.checkAllMissionsComplete();
+                
+                this.updateUI();
+                if (document.getElementById('missions-screen').classList.contains('active')) {
+                    this.renderMissions();
+                }
+                
+                await this.checkAchievements();
             }
         }
     },
@@ -937,6 +958,12 @@ const app = {
                 // Recargar logros
                 this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
                 this.showToast(`¡Logro desbloqueado: ${result.name}!`, 'success');
+                
+                // Actualizar UI y re-renderizar logros si la pantalla está activa
+                this.updateUI();
+                if (document.getElementById('achievements-screen').classList.contains('active')) {
+                    this.renderAchievements();
+                }
             }
         }
     },
