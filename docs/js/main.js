@@ -859,7 +859,17 @@ const app = {
         const id = this.state.currentMission.id;
         const satisfied = this.isMissionSatisfied(id);
 
+        const btn = document.getElementById('mission-action-btn');
+
         if (satisfied) {
+            // Deshabilitar botón inmediatamente para evitar múltiple click y claims infinitos
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Reclamando...';
+                btn.style.cursor = 'wait';
+                btn.classList.remove('glow-effect');
+            }
+
             // Completar misión en Supabase / Local
             const result = await missionsService.completeMission(this.state.currentUserId, id);
 
@@ -883,7 +893,13 @@ const app = {
                 // Verificar logros resultantes
                 await this.checkAchievements();
             } else {
-                this.showToast('Error al completar misión', 'error');
+                this.showToast('Error al completar misión o ya fue reclamada', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Reclamar Recompensa';
+                    btn.style.cursor = 'pointer';
+                    btn.classList.add('glow-effect');
+                }
                 this.closeModal();
             }
         } else {
@@ -1031,7 +1047,7 @@ const app = {
         document.getElementById('achievements-count').textContent = unlocked;
 
         container.innerHTML = this.state.achievements.map(achievement => `
-            <div class="achievement-item ${achievement.unlocked ? '' : 'locked'}">
+            <div class="achievement-item ${achievement.unlocked ? 'unlocked' : 'locked'}">
                 <img class="achievement-icon" src="${achievement.icon}" alt="Icono">
                 <span class="achievement-name">${achievement.name}</span>
                 <span class="achievement-desc">${achievement.description}</span>
