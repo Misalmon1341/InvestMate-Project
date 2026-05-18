@@ -53,19 +53,21 @@ export const missionsService = {
             if (!userMissions || userMissions.length === 0) {
                 await this.initializeMissions(userId);
                 
-                const baseMissions = MISSIONS_DATA.map(m => ({
-                    ...m,
-                    completed: false,
-                    completedAt: null
-                }));
-                localStorage.setItem(localKey, JSON.stringify(baseMissions));
+                let localMissions = JSON.parse(localStorage.getItem(localKey) || 'null');
+                if (!localMissions || localMissions.length === 0) {
+                    localMissions = MISSIONS_DATA.map(m => ({ ...m, completed: false, completedAt: null }));
+                }
+                localStorage.setItem(localKey, JSON.stringify(localMissions));
                 
-                return baseMissions;
+                return localMissions;
             }
 
-            // Combinar con datos base para tener iconos, tipos y respaldos fuertes contra esquemas desactualizados
+            // Combinar con datos base y local para evitar que se pierdan las misiones locales completadas
+            let localMissions = JSON.parse(localStorage.getItem(localKey) || '[]');
             const mergedMissions = userMissions.map(um => {
                 const base = MISSIONS_DATA.find(m => m.id === um.mission_id) || {};
+                const local = localMissions.find(m => m.id === um.mission_id) || {};
+                
                 return {
                     id: um.mission_id,
                     title: um.title || base.title || `Misión #${um.mission_id}`,
@@ -73,8 +75,8 @@ export const missionsService = {
                     reward: um.reward || base.reward || 1000,
                     icon: base.icon || '🎯',
                     type: base.type || 'unknown',
-                    completed: um.completed || false,
-                    completedAt: um.completed_at || null
+                    completed: um.completed || local.completed || false,
+                    completedAt: um.completed_at || local.completedAt || null
                 };
             });
 
@@ -117,25 +119,27 @@ export const missionsService = {
             if (!userAchievements || userAchievements.length === 0) {
                 await this.initializeAchievements(userId);
                 
-                const baseAchievements = ACHIEVEMENTS_DATA.map(a => ({
-                    ...a,
-                    unlocked: false,
-                    unlockedAt: null
-                }));
-                localStorage.setItem(localKey, JSON.stringify(baseAchievements));
+                let localAchievements = JSON.parse(localStorage.getItem(localKey) || 'null');
+                if (!localAchievements || localAchievements.length === 0) {
+                    localAchievements = ACHIEVEMENTS_DATA.map(a => ({ ...a, unlocked: false, unlockedAt: null }));
+                }
+                localStorage.setItem(localKey, JSON.stringify(localAchievements));
                 
-                return baseAchievements;
+                return localAchievements;
             }
 
+            let localAchievements = JSON.parse(localStorage.getItem(localKey) || '[]');
             const mergedAchievements = userAchievements.map(ua => {
                 const base = ACHIEVEMENTS_DATA.find(a => a.id === ua.achievement_id) || {};
+                const local = localAchievements.find(a => a.id === ua.achievement_id) || {};
+                
                 return {
                     id: ua.achievement_id,
                     name: ua.name || base.name || `Logro #${ua.achievement_id}`,
                     description: ua.description || base.description || 'Logro desbloqueado.',
                     icon: base.icon || '🏆',
-                    unlocked: ua.unlocked || false,
-                    unlockedAt: ua.unlocked_at || null
+                    unlocked: ua.unlocked || local.unlocked || false,
+                    unlockedAt: ua.unlocked_at || local.unlockedAt || null
                 };
             });
 
