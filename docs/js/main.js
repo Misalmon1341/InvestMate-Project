@@ -760,7 +760,8 @@ const app = {
 
             return `
                 <div class="mission-item ${statusClass}"
-                     onclick="app.showMissionDetail(${mission.id})">
+                     ${mission.completed ? '' : `onclick="app.showMissionDetail(${mission.id})"`}
+                     ${mission.completed ? 'style="cursor: default;"' : ''}>
                     <img class="mission-icon" src="${mission.icon}" alt="Icono">
                     <div class="mission-info">
                         <span class="mission-title">${mission.title}</span>
@@ -873,18 +874,22 @@ const app = {
             // Completar misión en Supabase / Local
             const result = await missionsService.completeMission(this.state.currentUserId, id);
 
-            if (result.success) {
+            if (result.success || result.alreadyCompleted) {
                 this.state.currentMission.completed = true;
-                this.state.balance += result.reward;
-
-                // Actualizar balance en Supabase
-                await authService.updateBalance(this.state.currentUserId, this.state.balance);
+                
+                if (result.success) {
+                    this.state.balance += result.reward;
+                    // Actualizar balance en Supabase
+                    await authService.updateBalance(this.state.currentUserId, this.state.balance);
+                    this.showToast(`¡Misión completada: ${this.state.currentMission.title}! +$${result.reward}`, 'success');
+                } else {
+                    this.showToast('Esta misión ya estaba completada.', 'info');
+                }
 
                 // Recargar misiones desde Supabase
                 this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
 
                 this.closeModal();
-                this.showToast(`¡Misión completada: ${this.state.currentMission.title}! +$${result.reward}`, 'success');
                 
                 // Actualizar balance e interfaz completa
                 this.updateUI();
