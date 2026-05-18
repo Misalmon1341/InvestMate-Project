@@ -1256,3 +1256,22 @@ body.light-mode .btn-primary {
         max-width: 600px;
     }
 }
+
+/* Glow effect for premium actionable buttons */
+.glow-effect {
+    animation: claim-glow 2s infinite alternate;
+    box-shadow: 0 0 8px rgba(0, 208, 156, 0.4);
+    border: 1px solid rgba(0, 208, 156, 0.6) !important;
+    transition: all 0.3s ease;
+}
+
+@keyframes claim-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(0, 208, 156, 0.4), 0 0 10px rgba(0, 208, 156, 0.2);
+        transform: scale(1);
+    }
+    100% {
+        box-shadow: 0 0 15px rgba(0, 208, 156, 0.8), 0 0 25px rgba(0, 208, 156, 0.4);
+        transform: scale(1.02);
+    }
+}

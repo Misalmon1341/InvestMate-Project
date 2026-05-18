@@ -287,23 +287,26 @@ export const missionsService = {
             let shouldComplete = false;
 
             switch (mission.type) {
-                case 'first_purchase':
-                    shouldComplete = stats.totalPurchases >= 1;
+                case 'first_purchase_after_learning':
+                    shouldComplete = stats.articlesRead >= 1 && stats.totalPurchases >= 1;
                     break;
-                case 'diversify':
-                    shouldComplete = stats.uniqueAssets >= 3;
+                case 'diversify_5':
+                    shouldComplete = stats.uniqueAssets >= 5;
                     break;
-                case 'first_etf':
-                    shouldComplete = stats.hasETF;
+                case 'etf_5k':
+                    shouldComplete = stats.etfValue >= 5000;
                     break;
-                case 'first_crypto':
-                    shouldComplete = stats.hasCrypto;
+                case 'crypto_3':
+                    shouldComplete = stats.cryptoCount >= 3;
                     break;
-                case 'portfolio_1k':
-                    shouldComplete = stats.portfolioValue >= 1000;
+                case 'portfolio_50k':
+                    shouldComplete = stats.portfolioValue >= 50000;
                     break;
-                case 'active_trader':
-                    shouldComplete = stats.totalPurchases >= 5;
+                case 'read_10_articles':
+                    shouldComplete = stats.articlesRead >= 10;
+                    break;
+                case 'active_trader_15':
+                    shouldComplete = stats.totalPurchases >= 15;
                     break;
                 case 'all_missions':
                     const othersComplete = missions.filter(m => m.completed && m.type !== 'all_missions').length;

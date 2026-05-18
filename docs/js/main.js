@@ -220,9 +220,28 @@ const app = {
         // Cargar logros desde Supabase
         this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
 
-        // Cargar artículos leídos
-        const articlesRead = localStorage.getItem('invesmate_articles_read');
-        this.state.articlesRead = articlesRead ? parseInt(articlesRead) : 0;
+        // Cargar artículos leídos únicos
+        const readListStr = localStorage.getItem('invesmate_read_articles_list') || '[]';
+        try {
+            const readList = JSON.parse(readListStr);
+            this.state.articlesRead = readList.length;
+        } catch (e) {
+            // Fallback al contador directo si la lista no existe o está corrupta
+            const articlesRead = localStorage.getItem('invesmate_articles_read');
+            this.state.articlesRead = articlesRead ? parseInt(articlesRead) : 0;
+        }
+
+        // Sincronizar contador de operaciones desde Supabase/local
+        try {
+            const txs = await portfolioService.getTransactions(this.state.currentUserId);
+            const totalOps = Math.max(txs.length, parseInt(localStorage.getItem('invesmate_operations') || '0'));
+            localStorage.setItem('invesmate_operations', totalOps.toString());
+        } catch (e) {
+            console.warn('Error sincronizando operaciones:', e);
+        }
+
+        // Verificar misiones y logros al cargar para actualizar cualquier progreso
+        await this.checkMissions();
     },
 
     // ========================================
@@ -736,6 +755,45 @@ const app = {
         `).join('');
     },
 
+    isMissionSatisfied(missionId) {
+        if (!this.state.currentUserId) return false;
+        
+        switch (missionId) {
+            case 1: // Analista Principiante: Lee al menos 1 artículo y realiza tu primera inversión
+                return this.state.articlesRead >= 1 && this.state.portfolio.length >= 1;
+            case 2: // Diversificación Estratégica: Ten al menos 5 activos diferentes en tu portafolio
+                return this.state.portfolio.length >= 5;
+            case 3: // Fondo de Seguridad: Invierte al menos $5,000 en un ETF seguro
+                return this.state.portfolio.some(p => {
+                    const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+                    if (!prod || prod.category !== 'etfs') return false;
+                    return (p.shares * prod.price) >= 5000;
+                });
+            case 4: // Portafolio Crypto: Invierte en 3 criptomonedas diferentes
+                const cryptoCount = this.state.portfolio.filter(p => {
+                    const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+                    return prod && prod.category === 'crypto';
+                }).length;
+                return cryptoCount >= 3;
+            case 5: // Magnate en Ascenso: Alcanza un valor total de portafolio de $50,000
+                const portfolioValue = this.state.portfolio.reduce((sum, item) => {
+                    const prod = this.products.find(p => p.id === (item.product_id || item.id));
+                    return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
+                }, 0);
+                return portfolioValue >= 50000;
+            case 6: // Académico Financiero: Lee al menos 10 artículos de aprendizaje
+                return this.state.articlesRead >= 10;
+            case 7: // Trader Experimentado: Realiza al menos 15 operaciones de compra
+                const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
+                return totalOps >= 15;
+            case 8: // Maestro Invesmate: Completa todas las demás misiones
+                const otherMissionsCompleted = this.state.missions.filter(m => m.id !== 8 && m.completed).length;
+                return otherMissionsCompleted >= 7;
+            default:
+                return false;
+        }
+    },
+
     showMissionDetail(missionId) {
         const mission = this.state.missions.find(m => m.id === missionId);
         if (!mission) return;
@@ -746,12 +804,33 @@ const app = {
         document.getElementById('mission-reward-amount').textContent = mission.reward;
 
         const btn = document.getElementById('mission-action-btn');
+        btn.className = 'btn-primary btn-large'; // Reset class
+        btn.style = ''; // Limpiar estilos manuales previos
+        
         if (mission.completed) {
             btn.textContent = 'Completada ✓';
             btn.disabled = true;
-        } else {
-            btn.textContent = 'Comenzar';
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+            btn.style.background = 'var(--text-secondary, #6c757d)';
+        } else if (this.isMissionSatisfied(missionId)) {
+            btn.textContent = 'Reclamar Recompensa';
             btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.style.background = '#00D09C'; // Hermoso color verde para reclamo!
+            btn.classList.add('glow-effect');
+        } else {
+            if (missionId === 6) {
+                btn.textContent = 'Ir a Aprendizaje';
+            } else if (missionId === 8) {
+                btn.textContent = 'Ver Misiones';
+            } else {
+                btn.textContent = 'Ir a Invertir';
+            }
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
         }
 
         document.getElementById('mission-detail-screen').classList.add('active');
@@ -760,91 +839,64 @@ const app = {
     async completeMission() {
         if (!this.state.currentMission || this.state.currentMission.completed) return;
 
-        // Completar misión en Supabase
-        const result = await missionsService.completeMission(this.state.currentUserId, this.state.currentMission.id);
+        const id = this.state.currentMission.id;
+        const satisfied = this.isMissionSatisfied(id);
 
-        if (result.success) {
-            this.state.currentMission.completed = true;
-            this.state.balance += result.reward;
+        if (satisfied) {
+            // Completar misión en Supabase / Local
+            const result = await missionsService.completeMission(this.state.currentUserId, id);
 
-            // Actualizar balance en Supabase
-            await authService.updateBalance(this.state.currentUserId, this.state.balance);
+            if (result.success) {
+                this.state.currentMission.completed = true;
+                this.state.balance += result.reward;
 
-            // Recargar misiones desde Supabase
-            this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
+                // Actualizar balance en Supabase
+                await authService.updateBalance(this.state.currentUserId, this.state.balance);
 
-            this.closeModal();
-            this.showToast(`¡Misión completada! +$${result.reward}`, 'success');
-            this.renderMissions();
+                // Recargar misiones desde Supabase
+                this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
 
-            // Verificar misión de "Maestro de Invesmate"
-            await this.checkAllMissionsComplete();
+                this.closeModal();
+                this.showToast(`¡Misión completada: ${this.state.currentMission.title}! +$${result.reward}`, 'success');
+                this.renderMissions();
+
+                // Verificar misiones resultantes y logros
+                await this.checkMissions();
+            } else {
+                this.showToast('Error al completar misión', 'error');
+                this.closeModal();
+            }
         } else {
-            this.showToast('Error al completar misión', 'error');
+            // No satisfecho: Redirigir según la categoría de la misión
             this.closeModal();
+            if (id === 6) {
+                this.navigate('learning-screen');
+            } else if (id === 8) {
+                // Ya está en misiones
+            } else {
+                this.navigate('invest-menu-screen');
+            }
         }
     },
 
     async checkAllMissionsComplete() {
-        const completed = this.state.missions.filter(m => m.completed).length;
-        if (completed >= this.state.missions.length) {
+        const completed = this.state.missions.filter(m => m.completed && m.id !== 8).length;
+        if (completed >= 7) {
             await this.completeMissionById(8);
         }
     },
 
-    async checkMissions(actionType, product) {
+    async checkMissions() {
         if (!this.state.currentUserId) return;
 
-        // Misión 1: Analista Principiante (1 artículo leído y 1 compra)
-        if (actionType === 'purchase' && this.state.portfolio.length >= 1 && this.state.articlesRead >= 1) {
-            await this.completeMissionById(1);
+        // Comprobar y autocompletar silenciosamente misiones cuyos criterios ya se cumplan
+        for (let id = 1; id <= 8; id++) {
+            if (this.isMissionSatisfied(id)) {
+                await this.completeMissionById(id);
+            }
         }
 
-        // Misión 2: Diversificación Estratégica (5 activos diferentes)
-        if (this.state.portfolio.length >= 5) {
-            await this.completeMissionById(2);
-        }
-
-        // Misión 3: Fondo de Seguridad (ETF > $5,000)
-        const hasBigETF = this.state.portfolio.some(p => {
-            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
-            if (!prod || prod.category !== 'etfs') return false;
-            return (p.shares * prod.price) >= 5000;
-        });
-        if (hasBigETF) {
-            await this.completeMissionById(3);
-        }
-
-        // Misión 4: Portafolio Crypto (3 cryptos)
-        const cryptoCount = this.state.portfolio.filter(p => {
-            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
-            return prod && prod.category === 'crypto';
-        }).length;
-        if (cryptoCount >= 3) {
-            await this.completeMissionById(4);
-        }
-
-        // Misión 5: Magnate en Ascenso ($50,000 portafolio)
-        const portfolioValue = this.state.portfolio.reduce((sum, item) => {
-            const prod = this.products.find(p => p.id === (item.product_id || p.id));
-            return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
-        }, 0);
-        if (portfolioValue >= 50000) {
-            await this.completeMissionById(5);
-        }
-
-        // Misión 6: Académico Financiero (10 artículos leídos)
-        if (this.state.articlesRead >= 10) {
-            await this.completeMissionById(6);
-        }
-
-        // Misión 7: Trader Experimentado (15 operaciones)
-        const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
-        if (totalOps >= 15) {
-            await this.completeMissionById(7);
-        }
-
-        // Verificar logros después de cada acción
+        // Verificar logros
         await this.checkAchievements();
     },
 
@@ -876,20 +928,22 @@ const app = {
     // LOGROS
     // ========================================
     async unlockAchievement(id) {
-        const result = await missionsService.unlockAchievement(this.state.currentUserId, id);
+        const achievement = this.state.achievements.find(a => a.id === id);
+        if (achievement && !achievement.unlocked) {
+            const result = await missionsService.unlockAchievement(this.state.currentUserId, id);
 
-        if (result.success) {
-            const achievement = this.state.achievements.find(a => a.id === id);
-            if (achievement) {
+            if (result.success) {
                 achievement.unlocked = true;
+                // Recargar logros
+                this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
+                this.showToast(`¡Logro desbloqueado: ${result.name}!`, 'success');
             }
-            // Recargar logros
-            this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
-            this.showToast(`¡Logro desbloqueado: ${result.name}!`, 'success');
         }
     },
 
     async checkAchievements() {
+        if (!this.state.currentUserId) return;
+
         const portfolioValue = this.state.portfolio.reduce((sum, item) => {
             const prod = this.products.find(p => p.id === (item.product_id || item.id));
             return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
@@ -897,6 +951,14 @@ const app = {
         const uniqueAssets = this.state.portfolio.length;
         const missionsCompleted = this.state.missions.filter(m => m.completed).length;
         const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
+
+        // Logro 1: Primeros Pasos (Completa tu registro)
+        await this.unlockAchievement(1);
+
+        // Logro 2: Inversor Informado (Primera compra tras estudiar)
+        if (totalOps >= 1 && this.state.articlesRead >= 1) {
+            await this.unlockAchievement(2);
+        }
 
         // Logro 3: Gran Diversificador (10 activos diferentes)
         if (uniqueAssets >= 10) {
@@ -931,7 +993,7 @@ const app = {
         }
 
         // Logro 8: Leyenda (todas las misiones completadas)
-        if (missionsCompleted >= this.state.missions.length) {
+        if (missionsCompleted >= 8) {
             await this.unlockAchievement(8);
         }
     },
@@ -989,21 +1051,26 @@ const app = {
         element.classList.toggle('expanded');
 
         if (element.classList.contains('expanded')) {
-            const readArticles = parseInt(localStorage.getItem('invesmate_articles_read') || '0');
-            const newCount = readArticles + 1;
-            localStorage.setItem('invesmate_articles_read', newCount.toString());
-            this.state.articlesRead = newCount;
+            const titleEl = element.querySelector('.learning-item-title');
+            const title = titleEl ? titleEl.textContent.trim() : '';
 
-            // Verificar misiones y logros relacionados con aprendizaje
-            if (newCount === 1) {
-                // Verificar si ya hizo una compra para desbloquear Misión 1
-                this.checkMissions('article_read');
-            }
-            if (newCount >= 10) {
-                this.checkMissions('article_read');
-            }
-            if (newCount >= 24) {
-                this.checkAchievements();
+            if (title) {
+                let readList = [];
+                try {
+                    readList = JSON.parse(localStorage.getItem('invesmate_read_articles_list') || '[]');
+                } catch (e) {
+                    readList = [];
+                }
+
+                if (!readList.includes(title)) {
+                    readList.push(title);
+                    localStorage.setItem('invesmate_read_articles_list', JSON.stringify(readList));
+                    localStorage.setItem('invesmate_articles_read', readList.length.toString());
+                    this.state.articlesRead = readList.length;
+
+                    // Verificar misiones y logros de forma centralizada y universal
+                    this.checkMissions();
+                }
             }
         }
     },
