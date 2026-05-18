@@ -60,31 +60,59 @@ export const authService = {
         }
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            // Añadir un timeout de 10 segundos a la autenticación
+            const authPromise = supabase.auth.signInWithPassword({
                 email,
                 password
             });
 
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+            );
+
+            const { data, error } = await Promise.race([authPromise, timeoutPromise]);
+
             if (error) throw error;
 
-            // Obtener perfil del usuario
-            const profile = await this.getUserProfile(data.user.id);
+            if (!data?.user) {
+                throw new Error('No se pudo recuperar la información del usuario');
+            }
+
+            // Devolver éxito inmediatamente, el perfil se puede cargar después o resolverse aquí
+            // Pero no queremos que getUserProfile bloquee si la red va lenta
+            const profilePromise = this.getUserProfile(data.user.id).catch(() => null);
+            const profile = await Promise.race([
+                profilePromise,
+                new Promise(resolve => setTimeout(() => resolve(null), 2000)) // Máximo 2s para el perfil
+            ]);
+
+            // Cadena de fallback robusta: perfil BD -> metadata -> email -> fallback final
+            const resolvedUsername = profile?.username 
+                || data.user.user_metadata?.username 
+                || data.user.raw_user_meta_data?.username
+                || (data.user.email ? data.user.email.split('@')[0] : null)
+                || email.split('@')[0]
+                || 'Usuario';
 
             return {
                 success: true,
                 user: {
                     id: data.user.id,
-                    username: profile?.username || username,
-                    email: email,
+                    username: resolvedUsername,
+                    email: data.user.email || email,
                     balance: profile?.balance || 10000,
-                    joinDate: profile?.created_at || new Date().toISOString()
+                    joinDate: profile?.created_at || data.user.created_at || new Date().toISOString()
                 }
             };
         } catch (error) {
             console.error('Error en login:', error);
+            let errorMessage = error.message;
+            if (error.message === 'TIMEOUT') {
+                errorMessage = 'La conexión con el servidor ha tardado demasiado. Inténtalo de nuevo.';
+            }
             return {
                 success: false,
-                error: this._mapAuthError(error)
+                error: this._mapAuthError({ message: errorMessage })
             };
         }
     },
@@ -151,20 +179,31 @@ export const authService = {
      * Obtener perfil de usuario desde la base de datos
      */
     async getUserProfile(userId) {
-        if (!isConnected) return null;
+        // Obtener balance local específico del usuario
+        const balanceKey = userId ? `invesmate_balance_${userId}` : 'invesmate_balance';
+        const localBalance = localStorage.getItem(balanceKey) || localStorage.getItem('invesmate_balance');
+        
+        if (!isConnected) return { id: userId, balance: localBalance ? JSON.parse(localBalance) : 10000 };
 
         try {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
+            
+            // Si no hay perfil en BD, devolver uno básico con el balance local si existe
+            if (!data) {
+                return { id: userId, balance: localBalance ? JSON.parse(localBalance) : 10000 };
+            }
+
+            // Devolver datos de la BD (que es la fuente de verdad principal)
             return data;
         } catch (error) {
             console.error('Error obteniendo perfil:', error);
-            return null;
+            return { id: userId, balance: localBalance ? JSON.parse(localBalance) : 10000 };
         }
     },
 
@@ -172,22 +211,31 @@ export const authService = {
      * Actualizar balance del usuario
      */
     async updateBalance(userId, newBalance) {
-        if (!isConnected) {
-            localStorage.setItem('invesmate_balance', JSON.stringify(newBalance));
+        // Guardar siempre en local con clave específica por usuario
+        const balanceKey = userId ? `invesmate_balance_${userId}` : 'invesmate_balance';
+        localStorage.setItem(balanceKey, JSON.stringify(newBalance));
+
+        const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+        if (!isConnected || !isUUID(userId)) {
             return { success: true };
         }
 
         try {
+            // Verificar sesión activa
+            const { data: authData } = await supabase.auth.getUser();
+            const activeUserId = authData?.user ? authData.user.id : userId;
+
             const { error } = await supabase
                 .from('profiles')
                 .update({ balance: newBalance })
-                .eq('id', userId);
+                .eq('id', activeUserId);
 
             if (error) throw error;
             return { success: true };
         } catch (error) {
-            console.error('Error actualizando balance:', error);
-            return { success: false, error: error.message };
+            console.error('Error actualizando balance en Supabase:', error);
+            return { success: true }; 
         }
     },
 
@@ -258,9 +306,10 @@ export const authService = {
             success: true,
             user: {
                 id: user.id,
-                username: user.username,
+                username: user.username || user.email.split('@')[0] || 'Usuario',
+                email: user.email,
                 balance: user.balance || 10000,
-                joinDate: user.joinDate
+                joinDate: user.joinDate || new Date().toISOString()
             }
         };
     },

@@ -8,7 +8,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // Valores por defecto (Fallback para cuando no se usa Vite como Live Server)
 const FALLBACK_URL = 'https://jkosuqfdpnclnvvekonu.supabase.co';
-const FALLBACK_ANON_KEY = 'sb_publishable_CfDAzR5guii0lyX4kBQCGw_6iVErkvX';
+const FALLBACK_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprb3N1cWZkcG5jbG52dmVrb251Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY2MDcsImV4cCI6MjA5MjI5MjYwN30.26mpP_YwlOvtYfgXydlKQ96DNKzSwDzp4NumJ47WxWo';
 
 let envUrl = undefined;
 let envKey = undefined;

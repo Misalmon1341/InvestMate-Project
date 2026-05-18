@@ -173,22 +173,38 @@ const app = {
     // AUTENTICACIÓN CON SUPABASE
     // ========================================
     async checkAuthSession() {
-        const session = await authService.getSession();
-        if (session?.user) {
-            // Obtener perfil desde Supabase
-            const profile = await authService.getUserProfile(session.user.id);
-            if (profile) {
-                this.state.currentUser = {
-                    id: profile.id,
-                    username: profile.username,
-                    balance: profile.balance || 10000
-                };
-                this.state.currentUserId = profile.id;
-                this.state.balance = profile.balance || 10000;
+        try {
+            const session = await authService.getSession();
+            if (session?.user) {
+                const user = session.user;
+                // Obtener perfil desde Supabase (opcional)
+                const profile = await authService.getUserProfile(user.id);
 
-                // Cargar portfolio y misiones desde Supabase
-                await this.loadUserData();
+                // Fallback chain robusta para username: perfil BD → metadata auth → email -> fallback
+                const resolvedUsername = profile?.username
+                    || user.user_metadata?.username
+                    || user.raw_user_meta_data?.username
+                    || (user.email ? user.email.split('@')[0] : null)
+                    || 'Usuario';
+
+                this.state.currentUser = {
+                    id: user.id,
+                    username: resolvedUsername,
+                    email: user.email,
+                    balance: profile?.balance || 10000
+                };
+                this.state.currentUserId = user.id;
+                this.state.balance = profile?.balance || 10000;
+
+                // Cargar portfolio y misiones desde Supabase (silenciosamente)
+                try {
+                    await this.loadUserData();
+                } catch (e) {
+                    console.warn('No se pudieron cargar todos los datos del usuario al inicio:', e);
+                }
             }
+        } catch (error) {
+            console.error('Error verificando sesión inicial:', error);
         }
     },
 
@@ -204,9 +220,28 @@ const app = {
         // Cargar logros desde Supabase
         this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
 
-        // Cargar artículos leídos
-        const articlesRead = localStorage.getItem('invesmate_articles_read');
-        this.state.articlesRead = articlesRead ? parseInt(articlesRead) : 0;
+        // Cargar artículos leídos únicos
+        const readListStr = localStorage.getItem('invesmate_read_articles_list') || '[]';
+        try {
+            const readList = JSON.parse(readListStr);
+            this.state.articlesRead = readList.length;
+        } catch (e) {
+            // Fallback al contador directo si la lista no existe o está corrupta
+            const articlesRead = localStorage.getItem('invesmate_articles_read');
+            this.state.articlesRead = articlesRead ? parseInt(articlesRead) : 0;
+        }
+
+        // Sincronizar contador de operaciones desde Supabase/local
+        try {
+            const txs = await portfolioService.getTransactions(this.state.currentUserId);
+            const totalOps = Math.max(txs.length, parseInt(localStorage.getItem('invesmate_operations') || '0'));
+            localStorage.setItem('invesmate_operations', totalOps.toString());
+        } catch (e) {
+            console.warn('Error sincronizando operaciones:', e);
+        }
+
+        // Verificar misiones y logros al cargar para actualizar cualquier progreso
+        await this.checkMissions();
     },
 
     // ========================================
@@ -280,23 +315,53 @@ const app = {
     },
 
     async login() {
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
+        const emailInput = document.getElementById('login-email');
+        const passwordInput = document.getElementById('login-password');
+        
+        if (!emailInput || !passwordInput) return;
 
-        const result = await authService.login(email, password);
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const submitBtn = document.querySelector('#login-form button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.textContent : 'Entrar';
 
-        if (result.success) {
-            this.state.currentUser = result.user;
-            this.state.currentUserId = result.user.id;
-            this.state.balance = result.user.balance || 10000;
+        try {
+            // Estado de carga
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Iniciando sesión...';
+            }
 
-            // Cargar datos del usuario
-            await this.loadUserData();
+            const result = await authService.login(email, password);
 
-            this.showToast(`¡Bienvenido ${result.user.username}!`, 'success');
-            this.navigate('main-menu-screen');
-        } else {
-            this.showToast(result.error || 'Credenciales incorrectas', 'error');
+            if (result.success && result.user) {
+                // Actualizar estado básico inmediatamente
+                this.state.currentUser = result.user;
+                this.state.currentUserId = result.user.id;
+                this.state.balance = result.user.balance || 10000;
+
+                // NAVEGACIÓN INMEDIATA
+                this.navigate('main-menu-screen');
+                this.showToast(`¡Bienvenido ${result.user.username || 'Usuario'}!`, 'success');
+
+                // Cargar datos pesados en segundo plano para no bloquear la UI
+                this.loadUserData().then(() => {
+                    this.updateUI(); // Refrescar UI cuando los datos lleguen
+                }).catch(err => {
+                    console.warn('Error cargando datos en segundo plano:', err);
+                });
+                
+            } else {
+                this.showToast(result.error || 'Credenciales incorrectas', 'error');
+            }
+        } catch (error) {
+            console.error('Error crítico en login:', error);
+            this.showToast('Error de conexión o del servidor', 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
         }
     },
 
@@ -668,50 +733,7 @@ const app = {
     // ========================================
     // MISIONES
     // ========================================
-    evaluateMissionConditions() {
-        if (!this.state.missions) return;
-        
-        const portfolioValue = this.state.portfolio.reduce((sum, item) => {
-            const prod = this.products.find(p => p.id === (item.product_id || p.id));
-            return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
-        }, 0);
-        const uniqueAssets = this.state.portfolio.length;
-        const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
-        const articlesRead = this.state.articlesRead || 0;
-        const hasBigETF = this.state.portfolio.some(p => {
-            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
-            return prod && prod.category === 'etfs' && (p.shares * prod.price) >= 5000;
-        });
-        const cryptoCount = this.state.portfolio.filter(p => {
-            const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
-            return prod && prod.category === 'crypto';
-        }).length;
-        
-        this.state.missions.forEach(mission => {
-            if (mission.completed) {
-                mission.readyToClaim = false;
-                return;
-            }
-            
-            switch (mission.id) {
-                case 1: mission.readyToClaim = (uniqueAssets >= 1 && articlesRead >= 1); break;
-                case 2: mission.readyToClaim = (uniqueAssets >= 5); break;
-                case 3: mission.readyToClaim = hasBigETF; break;
-                case 4: mission.readyToClaim = (cryptoCount >= 3); break;
-                case 5: mission.readyToClaim = (portfolioValue >= 50000); break;
-                case 6: mission.readyToClaim = (articlesRead >= 10); break;
-                case 7: mission.readyToClaim = (totalOps >= 15); break;
-                case 8: 
-                    const othersCompleted = this.state.missions.filter(m => m.completed && m.id !== 8).length;
-                    mission.readyToClaim = (othersCompleted >= 7);
-                    break;
-            }
-        });
-    },
-
     renderMissions() {
-        this.evaluateMissionConditions();
-        
         const container = document.getElementById('missions-list');
         const completed = this.state.missions.filter(m => m.completed).length;
         const total = this.state.missions.length;
@@ -721,35 +743,76 @@ const app = {
         document.getElementById('missions-progress-fill').style.width = `${(completed / total) * 100}%`;
 
         container.innerHTML = this.state.missions.map(mission => {
+            const satisfied = this.isMissionSatisfied(mission.id);
             let statusClass = 'pending';
             let badgeText = `+$${mission.reward}`;
-            let badgeStyle = '';
-            
+            let badgeClass = 'mission-reward-badge';
+
             if (mission.completed) {
                 statusClass = 'completed';
-                badgeText = '✓';
-            } else if (mission.readyToClaim) {
-                statusClass = 'ready-to-claim';
-                badgeText = '¡Reclamar!';
-                badgeStyle = 'background: var(--primary); color: white;';
+                badgeText = 'Completada ✓';
+                badgeClass = 'mission-reward-badge completed';
+            } else if (satisfied) {
+                statusClass = 'satisfied';
+                badgeText = 'Reclamar! 🎁';
+                badgeClass = 'mission-reward-badge satisfied-badge';
             }
-            
+
             return `
                 <div class="mission-item ${statusClass}"
-                     onclick="app.showMissionDetail(${mission.id})">
+                     ${mission.completed ? '' : `onclick="app.showMissionDetail(${mission.id})"`}
+                     ${mission.completed ? 'style="cursor: default;"' : ''}>
                     <img class="mission-icon" src="${mission.icon}" alt="Icono">
                     <div class="mission-info">
                         <span class="mission-title">${mission.title}</span>
                         <span class="mission-desc">${mission.description}</span>
                     </div>
-                    <span class="mission-reward-badge" style="${badgeStyle}">${badgeText}</span>
+                    <span class="${badgeClass}">${badgeText}</span>
                 </div>
             `;
         }).join('');
     },
 
+    isMissionSatisfied(missionId) {
+        if (!this.state.currentUserId) return false;
+        
+        switch (missionId) {
+            case 1: // Analista Principiante: Lee al menos 1 artículo y realiza tu primera inversión
+                return this.state.articlesRead >= 1 && this.state.portfolio.length >= 1;
+            case 2: // Diversificación Estratégica: Ten al menos 5 activos diferentes en tu portafolio
+                return this.state.portfolio.length >= 5;
+            case 3: // Fondo de Seguridad: Invierte al menos $5,000 en un ETF seguro
+                return this.state.portfolio.some(p => {
+                    const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+                    if (!prod || prod.category !== 'etfs') return false;
+                    return (p.shares * prod.price) >= 5000;
+                });
+            case 4: // Portafolio Crypto: Invierte en 3 criptomonedas diferentes
+                const cryptoCount = this.state.portfolio.filter(p => {
+                    const prod = this.products.find(pr => pr.id === (p.product_id || p.id));
+                    return prod && prod.category === 'crypto';
+                }).length;
+                return cryptoCount >= 3;
+            case 5: // Magnate en Ascenso: Alcanza un valor total de portafolio de $50,000
+                const portfolioValue = this.state.portfolio.reduce((sum, item) => {
+                    const prod = this.products.find(p => p.id === (item.product_id || item.id));
+                    return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
+                }, 0);
+                return portfolioValue >= 50000;
+            case 6: // Académico Financiero: Lee al menos 10 artículos de aprendizaje
+                return this.state.articlesRead >= 10;
+            case 7: // Trader Experimentado: Realiza al menos 15 operaciones de compra
+                const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
+                return totalOps >= 15;
+            case 8: // Maestro Invesmate: Completa todas las demás misiones
+                const otherMissionsCompleted = this.state.missions.filter(m => m.id !== 8 && m.completed).length;
+                return otherMissionsCompleted >= 7;
+            default:
+                return false;
+        }
+    },
+
     showMissionDetail(missionId) {
-        this.evaluateMissionConditions();
         const mission = this.state.missions.find(m => m.id === missionId);
         if (!mission) return;
 
@@ -759,18 +822,33 @@ const app = {
         document.getElementById('mission-reward-amount').textContent = mission.reward;
 
         const btn = document.getElementById('mission-action-btn');
+        btn.className = 'btn-primary btn-large'; // Reset class
+        btn.style = ''; // Limpiar estilos manuales previos
+        
         if (mission.completed) {
             btn.textContent = 'Completada ✓';
             btn.disabled = true;
-            btn.className = 'btn-secondary btn-large';
-        } else if (mission.readyToClaim) {
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+            btn.style.background = 'var(--text-secondary, #6c757d)';
+        } else if (this.isMissionSatisfied(missionId)) {
             btn.textContent = 'Reclamar Recompensa';
             btn.disabled = false;
-            btn.className = 'btn-primary btn-large';
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.style.background = '#00D09C'; // Hermoso color verde para reclamo!
+            btn.classList.add('glow-effect');
         } else {
-            btn.textContent = 'En Progreso';
-            btn.disabled = true;
-            btn.className = 'btn-secondary btn-large';
+            if (missionId === 6) {
+                btn.textContent = 'Ir a Aprendizaje';
+            } else if (missionId === 8) {
+                btn.textContent = 'Ver Misiones';
+            } else {
+                btn.textContent = 'Ir a Invertir';
+            }
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
         }
 
         document.getElementById('mission-detail-screen').classList.add('active');
@@ -779,76 +857,140 @@ const app = {
     async completeMission() {
         if (!this.state.currentMission || this.state.currentMission.completed) return;
         
-        // Verificar si la misión está lista para ser reclamada
-        this.evaluateMissionConditions();
-        const missionToComplete = this.state.missions.find(m => m.id === this.state.currentMission.id);
-        
-        if (!missionToComplete || !missionToComplete.readyToClaim) {
-            this.showToast('Aún no has cumplido los requisitos de esta misión', 'error');
-            return;
-        }
-        
+        const id = this.state.currentMission.id;
+        const satisfied = this.isMissionSatisfied(id);
+
         const btn = document.getElementById('mission-action-btn');
-        btn.textContent = 'Reclamando...';
-        btn.disabled = true;
 
-        // Completar misión en Supabase
-        const result = await missionsService.completeMission(this.state.currentUserId, this.state.currentMission.id);
+        if (satisfied) {
+            // Deshabilitar botón inmediatamente para evitar múltiple click y claims infinitos
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Reclamando...';
+                btn.style.cursor = 'wait';
+                btn.classList.remove('glow-effect');
+            }
 
-        if (result.success) {
-            this.state.currentMission.completed = true;
-            this.state.currentMission.readyToClaim = false;
-            this.state.balance += result.reward;
+            // Completar misión en Supabase / Local
+            const result = await missionsService.completeMission(this.state.currentUserId, id);
 
-            // Actualizar balance en Supabase
-            await authService.updateBalance(this.state.currentUserId, this.state.balance);
+            if (result.success || result.alreadyCompleted) {
+                this.state.currentMission.completed = true;
+                
+                if (result.success) {
+                    this.state.balance += result.reward;
+                    // Actualizar balance en Supabase
+                    await authService.updateBalance(this.state.currentUserId, this.state.balance);
+                    this.showToast(`¡Misión completada: ${this.state.currentMission.title}! +$${result.reward}`, 'success');
+                } else {
+                    this.showToast('Esta misión ya estaba completada.', 'info');
+                }
 
-            // Recargar misiones desde Supabase
-            this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
+                // Recargar misiones desde Supabase
+                this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
 
-            this.closeModal();
-            this.showToast(`¡Misión completada! +$${result.reward}`, 'success');
-            
-            // Re-evaluar por si se desbloqueó la misión final
-            this.evaluateMissionConditions();
-            this.renderMissions();
-            await this.checkAchievements();
+                this.closeModal();
+                
+                // Actualizar balance e interfaz completa
+                this.updateUI();
+                this.renderMissions();
+
+                // Verificar logros resultantes
+                await this.checkAchievements();
+            } else {
+                this.showToast('Error al completar misión o ya fue reclamada', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Reclamar Recompensa';
+                    btn.style.cursor = 'pointer';
+                    btn.classList.add('glow-effect');
+                }
+                this.closeModal();
+            }
         } else {
-            btn.textContent = 'Reclamar Recompensa';
-            btn.disabled = false;
-            this.showToast('Error al completar misión', 'error');
+            // No satisfecho: Redirigir según la categoría de la misión
             this.closeModal();
+            if (id === 6) {
+                this.navigate('learning-screen');
+            } else if (id === 8) {
+                // Ya está en misiones
+            } else {
+                this.navigate('invest-menu-screen');
+            }
         }
     },
 
-    async checkMissions(actionType, product) {
-        if (!this.state.currentUserId) return;
-
-        // Ya no completamos las misiones automáticamente.
-        // Solo evaluamos los logros, ya que las misiones ahora se reclaman manualmente.
-        
-        // Verificar logros después de cada acción
+    async checkAllMissionsComplete() {
+        // En lugar de autocompletar la misión 8 en segundo plano, dejamos que el usuario
+        // vea que la misión 8 está satisfecha y la reclame él mismo.
         await this.checkAchievements();
     },
 
+    async checkMissions() {
+        if (!this.state.currentUserId) return;
+
+        // Verificar logros automáticamente en segundo plano
+        await this.checkAchievements();
+
+        // Refrescar balance, profile e interfaz completa para asegurar coherencia
+        this.updateUI();
+
+        // Si la pantalla de misiones está activa, volver a renderizar para mostrar cuáles se pueden reclamar
+        if (document.getElementById('missions-screen').classList.contains('active')) {
+            this.renderMissions();
+        }
+    },
+
+    async completeMissionById(id) {
+        // Método de conveniencia mantenido para fallback local/remoto o sincronización en lote
+        const mission = this.state.missions.find(m => m.id === id);
+        if (mission && !mission.completed) {
+            const result = await missionsService.completeMission(this.state.currentUserId, id);
+
+            if (result.success) {
+                mission.completed = true;
+                this.state.balance += result.reward;
+                await authService.updateBalance(this.state.currentUserId, this.state.balance);
+                
+                this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
+                
+                this.showToast(`¡Misión desbloqueada: ${mission.title}! +$${result.reward}`, 'success');
+                
+                this.updateUI();
+                if (document.getElementById('missions-screen').classList.contains('active')) {
+                    this.renderMissions();
+                }
+                
+                await this.checkAchievements();
+            }
+        }
+    },
     // ========================================
     // LOGROS
     // ========================================
     async unlockAchievement(id) {
-        const result = await missionsService.unlockAchievement(this.state.currentUserId, id);
+        const achievement = this.state.achievements.find(a => a.id === id);
+        if (achievement && !achievement.unlocked) {
+            const result = await missionsService.unlockAchievement(this.state.currentUserId, id);
 
-        if (result.success) {
-            const achievement = this.state.achievements.find(a => a.id === id);
-            if (achievement) {
+            if (result.success) {
                 achievement.unlocked = true;
+                // Recargar logros
+                this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
+                this.showToast(`¡Logro desbloqueado: ${result.name}!`, 'success');
+                
+                // Actualizar UI y re-renderizar logros si la pantalla está activa
+                this.updateUI();
+                if (document.getElementById('achievements-screen').classList.contains('active')) {
+                    this.renderAchievements();
+                }
             }
-            // Recargar logros
-            this.state.achievements = await missionsService.getUserAchievements(this.state.currentUserId);
-            this.showToast(`¡Logro desbloqueado: ${result.name}!`, 'success');
         }
     },
 
     async checkAchievements() {
+        if (!this.state.currentUserId) return;
+
         const portfolioValue = this.state.portfolio.reduce((sum, item) => {
             const prod = this.products.find(p => p.id === (item.product_id || item.id));
             return sum + (item.shares * (prod ? prod.price : (item.avg_price || item.avgPrice || 0)));
@@ -856,6 +998,14 @@ const app = {
         const uniqueAssets = this.state.portfolio.length;
         const missionsCompleted = this.state.missions.filter(m => m.completed).length;
         const totalOps = parseInt(localStorage.getItem('invesmate_operations') || '0');
+
+        // Logro 1: Primeros Pasos (Completa tu registro)
+        await this.unlockAchievement(1);
+
+        // Logro 2: Inversor Informado (Primera compra tras estudiar)
+        if (totalOps >= 1 && this.state.articlesRead >= 1) {
+            await this.unlockAchievement(2);
+        }
 
         // Logro 3: Gran Diversificador (10 activos diferentes)
         if (uniqueAssets >= 10) {
@@ -890,7 +1040,7 @@ const app = {
         }
 
         // Logro 8: Leyenda (todas las misiones completadas)
-        if (missionsCompleted >= this.state.missions.length) {
+        if (missionsCompleted >= 8) {
             await this.unlockAchievement(8);
         }
     },
@@ -901,10 +1051,13 @@ const app = {
         document.getElementById('achievements-count').textContent = unlocked;
 
         container.innerHTML = this.state.achievements.map(achievement => `
-            <div class="achievement-item ${achievement.unlocked ? '' : 'locked'}">
+            <div class="achievement-item ${achievement.unlocked ? 'unlocked' : 'locked'}">
                 <img class="achievement-icon" src="${achievement.icon}" alt="Icono">
-                <span class="achievement-name">${achievement.name}</span>
-                <span class="achievement-desc">${achievement.description}</span>
+                <div class="achievement-info" style="flex: 1;">
+                    <span class="achievement-title">${achievement.name}</span>
+                    <span class="achievement-desc">${achievement.description}</span>
+                </div>
+                ${achievement.unlocked ? '<span class="achievement-badge" style="color: var(--primary); font-weight: bold; font-size: 0.8rem; background: rgba(0,208,156,0.2); padding: 4px 8px; border-radius: 12px;">Completado ✓</span>' : ''}
             </div>
         `).join('');
     },
@@ -948,21 +1101,26 @@ const app = {
         element.classList.toggle('expanded');
 
         if (element.classList.contains('expanded')) {
-            const readArticles = parseInt(localStorage.getItem('invesmate_articles_read') || '0');
-            const newCount = readArticles + 1;
-            localStorage.setItem('invesmate_articles_read', newCount.toString());
-            this.state.articlesRead = newCount;
+            const titleEl = element.querySelector('.learning-item-title');
+            const title = titleEl ? titleEl.textContent.trim() : '';
 
-            // Verificar misiones y logros relacionados con aprendizaje
-            if (newCount === 1) {
-                // Verificar si ya hizo una compra para desbloquear Misión 1
-                this.checkMissions('article_read');
-            }
-            if (newCount >= 10) {
-                this.checkMissions('article_read');
-            }
-            if (newCount >= 24) {
-                this.checkAchievements();
+            if (title) {
+                let readList = [];
+                try {
+                    readList = JSON.parse(localStorage.getItem('invesmate_read_articles_list') || '[]');
+                } catch (e) {
+                    readList = [];
+                }
+
+                if (!readList.includes(title)) {
+                    readList.push(title);
+                    localStorage.setItem('invesmate_read_articles_list', JSON.stringify(readList));
+                    localStorage.setItem('invesmate_articles_read', readList.length.toString());
+                    this.state.articlesRead = readList.length;
+
+                    // Verificar misiones y logros de forma centralizada y universal
+                    this.checkMissions();
+                }
             }
         }
     },

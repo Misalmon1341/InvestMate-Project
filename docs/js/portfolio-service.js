@@ -10,8 +10,14 @@ export const portfolioService = {
      * Obtener portfolio de un usuario
      */
     async getPortfolio(userId) {
+        if (!userId) return [];
+        
+        // Clave específica por usuario para evitar mezclar datos de diferentes cuentas
+        const localKey = `invesmate_portfolio_${userId}`;
+        const localPortfolio = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_portfolio') || '[]');
+        
         if (!isConnected) {
-            return JSON.parse(localStorage.getItem('invesmate_portfolio') || '[]');
+            return localPortfolio;
         }
 
         try {
@@ -22,10 +28,29 @@ export const portfolioService = {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            return data || [];
+            
+            const supabaseData = data || [];
+            
+            // Fusión inteligente: Mantener lo de Supabase y añadir lo local que no se ha sincronizado aún
+            const merged = [...supabaseData];
+            
+            localPortfolio.forEach(lp => {
+                const lpId = lp.product_id || lp.id;
+                const alreadyInSupabase = supabaseData.some(sd => sd.product_id == lpId);
+                
+                if (!alreadyInSupabase) {
+                    merged.push({
+                        ...lp,
+                        product_id: lpId, // Asegurar consistencia de nombres
+                        is_local: true
+                    });
+                }
+            });
+
+            return merged;
         } catch (error) {
-            console.error('Error obteniendo portfolio:', error);
-            return [];
+            console.error('Error sincronizando portfolio, usando local:', error);
+            return localPortfolio;
         }
     },
 
@@ -35,26 +60,39 @@ export const portfolioService = {
     async buyAsset(userId, product, amount) {
         const shares = amount / product.price;
 
-        if (!isConnected) {
+        // Validar si es un UUID (Supabase) o un ID local
+        const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        
+        if (!isConnected || !isUUID(userId)) {
+            console.log('Compra: Usando almacenamiento local (ID no UUID o sin conexión)');
             return this._buyLocal(userId, product, amount, shares);
         }
 
         try {
+            // Asegurarnos de que el usuario está realmente autenticado en Supabase
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            if (authError || !authData?.user) {
+                console.warn('Sesión de Supabase no válida para compra, usando local');
+                return this._buyLocal(userId, product, amount, shares);
+            }
+            
+            const activeUserId = authData.user.id;
+
             // Verificar si ya tiene este activo
-            const { data: existing } = await supabase
+            const { data: existing, error: fetchError } = await supabase
                 .from('portfolio')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_id', activeUserId)
                 .eq('product_id', product.id)
-                .single();
+                .maybeSingle(); // Usar maybeSingle para evitar errores de 0 filas
 
             if (existing) {
                 // Actualizar posición existente
                 const newShares = existing.shares + shares;
-                const newAvgPrice = ((existing.shares * existing.avg_price) + amount) / newShares;
-                const newValue = existing.invested_value + amount;
+                const newAvgPrice = ((existing.shares * (existing.avg_price || 0)) + amount) / newShares;
+                const newValue = (existing.invested_value || 0) + amount;
 
-                const { error } = await supabase
+                const { error: updateError } = await supabase
                     .from('portfolio')
                     .update({
                         shares: newShares,
@@ -64,13 +102,13 @@ export const portfolioService = {
                     })
                     .eq('id', existing.id);
 
-                if (error) throw error;
+                if (updateError) throw updateError;
             } else {
                 // Crear nueva posición
-                const { error } = await supabase
+                const { error: insertError } = await supabase
                     .from('portfolio')
                     .insert({
-                        user_id: userId,
+                        user_id: activeUserId,
                         product_id: product.id,
                         product_name: product.name,
                         product_symbol: product.symbol,
@@ -80,16 +118,27 @@ export const portfolioService = {
                         invested_value: amount
                     });
 
-                if (error) throw error;
+                if (insertError) throw insertError;
             }
 
             // Registrar transacción
-            await this._recordTransaction(userId, product, 'buy', shares, product.price, amount);
+            await this._recordTransaction(activeUserId, product, 'buy', shares, product.price, amount);
 
             return { success: true, shares };
         } catch (error) {
-            console.error('Error en compra:', error);
-            return { success: false, error: error.message };
+            console.error('Error detallado en compra:', error);
+            
+            // Código 23503 es Foreign Key Violation en PostgreSQL
+            // También revisamos el mensaje por si acaso
+            const isFKError = error.code === '23503' || 
+                             (error.message && (error.message.includes('foreign key') || error.message.includes('clave foránea')));
+
+            if (isFKError) {
+                console.warn('Fallo de integridad (FK) en Supabase. Guardando localmente para no bloquear al usuario.');
+                return this._buyLocal(userId, product, amount, shares);
+            }
+            
+            return { success: false, error: error.message || 'Error en la base de datos' };
         }
     },
 
@@ -97,18 +146,29 @@ export const portfolioService = {
      * Vender activo
      */
     async sellAsset(userId, productId, sharesToSell, currentPrice) {
-        if (!isConnected) {
+        // Validar si es un UUID (Supabase) o un ID local
+        const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+        if (!isConnected || !isUUID(userId)) {
             return this._sellLocal(productId, sharesToSell, currentPrice);
         }
 
         try {
+            // Asegurarnos de que el usuario está realmente autenticado en Supabase
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            if (authError || !authData?.user) {
+                return this._sellLocal(productId, sharesToSell, currentPrice);
+            }
+            
+            const activeUserId = authData.user.id;
+
             // Obtener el activo
-            const { data: asset } = await supabase
+            const { data: asset, error: fetchError } = await supabase
                 .from('portfolio')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_id', activeUserId)
                 .eq('product_id', productId)
-                .single();
+                .maybeSingle();
 
             if (!asset) {
                 return { success: false, error: 'Activo no encontrado' };
@@ -146,11 +206,17 @@ export const portfolioService = {
             }
 
             // Registrar transacción
-            await this._recordTransaction(userId, asset, 'sell', sharesToSell, currentPrice, saleValue);
+            await this._recordTransaction(activeUserId, asset, 'sell', sharesToSell, currentPrice, saleValue);
 
             return { success: true, saleValue };
         } catch (error) {
             console.error('Error en venta:', error);
+            const isFKError = error.code === '23503' || 
+                             (error.message && (error.message.includes('foreign key') || error.message.includes('clave foránea')));
+            
+            if (isFKError) {
+                return this._sellLocal(productId, sharesToSell, currentPrice);
+            }
             return { success: false, error: error.message };
         }
     },
@@ -200,26 +266,32 @@ export const portfolioService = {
     // MÉTODOS LOCALES (FALLBACK)
     // ========================================
     _buyLocal(userId, product, amount, shares) {
-        let portfolio = JSON.parse(localStorage.getItem('invesmate_portfolio') || '[]');
+        const localKey = userId ? `invesmate_portfolio_${userId}` : 'invesmate_portfolio';
+        let portfolio = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem('invesmate_portfolio') || '[]');
 
-        const existing = portfolio.find(p => p.id === product.id);
+        const existing = portfolio.find(p => (p.product_id || p.id) == product.id);
         if (existing) {
-            existing.shares += shares;
-            existing.avgPrice = ((existing.shares - shares) * existing.avgPrice + amount) / existing.shares;
-            existing.value += amount;
+            const currentShares = existing.shares || 0;
+            const currentAvgPrice = existing.avg_price || existing.avgPrice || 0;
+            const currentInvested = existing.invested_value || existing.value || 0;
+
+            existing.shares = currentShares + shares;
+            existing.avg_price = ((currentShares * currentAvgPrice) + amount) / (currentShares + shares);
+            existing.invested_value = currentInvested + amount;
         } else {
             portfolio.push({
-                id: product.id,
-                name: product.name,
-                symbol: product.symbol,
-                category: product.category,
-                shares,
-                avgPrice: product.price,
-                value: amount
+                product_id: product.id,
+                product_name: product.name,
+                product_symbol: product.symbol,
+                product_category: product.category,
+                shares: shares,
+                avg_price: product.price,
+                invested_value: amount,
+                created_at: new Date().toISOString()
             });
         }
 
-        localStorage.setItem('invesmate_portfolio', JSON.stringify(portfolio));
+        localStorage.setItem(localKey, JSON.stringify(portfolio));
         return { success: true, shares };
     },
 
@@ -249,7 +321,9 @@ export const portfolioService = {
     },
 
     async _recordTransaction(userId, product, type, shares, price, total) {
-        if (!isConnected) {
+        const isUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+        if (!isConnected || !isUUID(userId)) {
             const transactions = JSON.parse(localStorage.getItem('invesmate_transactions') || '[]');
             transactions.push({
                 id: `tx_${Date.now()}`,
