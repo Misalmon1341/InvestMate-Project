@@ -1049,8 +1049,11 @@ const app = {
         container.innerHTML = this.state.achievements.map(achievement => `
             <div class="achievement-item ${achievement.unlocked ? 'unlocked' : 'locked'}">
                 <img class="achievement-icon" src="${achievement.icon}" alt="Icono">
-                <span class="achievement-name">${achievement.name}</span>
-                <span class="achievement-desc">${achievement.description}</span>
+                <div class="achievement-info" style="flex: 1;">
+                    <span class="achievement-title">${achievement.name}</span>
+                    <span class="achievement-desc">${achievement.description}</span>
+                </div>
+                ${achievement.unlocked ? '<span class="achievement-badge" style="color: var(--primary); font-weight: bold; font-size: 0.8rem; background: rgba(0,208,156,0.2); padding: 4px 8px; border-radius: 12px;">Completado ✓</span>' : ''}
             </div>
         `).join('');
     },
