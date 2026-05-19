@@ -44,7 +44,7 @@ export const missionsService = {
 
         try {
             // Obtener misiones del usuario
-            const { data: userMissions } = await supabase
+            let { data: userMissions } = await supabase
                 .from('user_missions')
                 .select('*')
                 .eq('user_id', userId);
@@ -52,22 +52,57 @@ export const missionsService = {
             // Si no tiene misiones, inicializar con las predeterminadas
             if (!userMissions || userMissions.length === 0) {
                 await this.initializeMissions(userId);
-                
+
                 let localMissions = JSON.parse(localStorage.getItem(localKey) || 'null');
                 if (!localMissions || localMissions.length === 0) {
                     localMissions = MISSIONS_DATA.map(m => ({ ...m, completed: false, completedAt: null }));
                 }
                 localStorage.setItem(localKey, JSON.stringify(localMissions));
-                
+
                 return localMissions;
             }
 
-            // Combinar con datos base y local para evitar que se pierdan las misiones locales completadas
+            // Obtener datos locales
             let localMissions = JSON.parse(localStorage.getItem(localKey) || '[]');
+
+            // Corregir discrepancias: si localStorage dice completada pero Supabase no, actualizar Supabase
+            if (userMissions && userMissions.length > 0 && localMissions && localMissions.length > 0) {
+                const corrections = localMissions
+                    .filter(localM => localM.completed === true)
+                    .filter(localM => {
+                        const um = userMissions.find(um => um.id === localM.id);
+                        return !um || um.completed === false;
+                    });
+
+                // Aplicar correcciones a Supabase
+                for (const localM of corrections) {
+                    try {
+                        await supabase
+                            .from('user_missions')
+                            .update({ completed: true })
+                            .eq('user_id', userId)
+                            .eq('mission_id', localM.id);
+                    } catch (corrError) {
+                        console.error(`Error corrigiendo misión ${localM.id} en Supabase:`, corrError);
+                    }
+                }
+
+                // Vuelve a obtener las misiones para asegurar consistencia
+                const { data: freshUserMissions, error: freshSelectError } = await supabase
+                    .from('user_missions')
+                    .select('*')
+                    .eq('user_id', userId);
+
+                if (freshSelectError) throw freshSelectError;
+                userMissions = freshUserMissions;
+            }
+
+            // Combinar con datos base y local para evitar que se pierdan las misiones locales completadas
+            localMissions = JSON.parse(localStorage.getItem(localKey) || '[]');
             const mergedMissions = userMissions.map(um => {
                 const base = MISSIONS_DATA.find(m => m.id === um.mission_id) || {};
                 const local = localMissions.find(m => m.id === um.mission_id) || {};
-                
+
                 return {
                     id: um.mission_id,
                     title: um.title || base.title || `Misión #${um.mission_id}`,
@@ -111,28 +146,62 @@ export const missionsService = {
         }
 
         try {
-            const { data: userAchievements } = await supabase
+            let { data: userAchievements } = await supabase
                 .from('user_achievements')
                 .select('*')
                 .eq('user_id', userId);
 
             if (!userAchievements || userAchievements.length === 0) {
                 await this.initializeAchievements(userId);
-                
+
                 let localAchievements = JSON.parse(localStorage.getItem(localKey) || 'null');
                 if (!localAchievements || localAchievements.length === 0) {
                     localAchievements = ACHIEVEMENTS_DATA.map(a => ({ ...a, unlocked: false, unlockedAt: null }));
                 }
                 localStorage.setItem(localKey, JSON.stringify(localAchievements));
-                
+
                 return localAchievements;
+            }
+
+            let localAchievements = JSON.parse(localStorage.getItem(localKey) || '[]');
+
+            // Corregir discrepancias: si localStorage dice desbloqueado pero Supabase no, actualizar Supabase
+            if (userAchievements && userAchievements.length > 0 && localAchievements && localAchievements.length > 0) {
+                const corrections = localAchievements
+                    .filter(localA => localA.unlocked === true)
+                    .filter(localA => {
+                        const ua = userAchievements.find(ua => ua.achievement_id === localA.id);
+                        return !ua || ua.unlocked === false;
+                    });
+
+                // Aplicar correcciones a Supabase
+                for (const localA of corrections) {
+                    try {
+                        await supabase
+                            .from('user_achievements')
+                            .update({ unlocked: true })
+                            .eq('user_id', userId)
+                            .eq('achievement_id', localA.id);
+                    } catch (corrError) {
+                        console.error(`Error corrigiendo logro ${localA.id} en Supabase:`, corrError);
+                    }
+                }
+
+                // Vuelve a obtener los logros para asegurar consistencia
+                const { data: freshUserAchievements, error: freshSelectError } = await supabase
+                    .from('user_achievements')
+                    .select('*')
+                    .eq('user_id', userId);
+
+                if (freshSelectError) throw freshSelectError;
+                userAchievements = freshUserAchievements;
             }
 
             let localAchievements = JSON.parse(localStorage.getItem(localKey) || '[]');
             const mergedAchievements = userAchievements.map(ua => {
                 const base = ACHIEVEMENTS_DATA.find(a => a.id === ua.achievement_id) || {};
                 const local = localAchievements.find(a => a.id === ua.achievement_id) || {};
-                
+
                 return {
                     id: ua.achievement_id,
                     name: ua.name || base.name || `Logro #${ua.achievement_id}`,
@@ -261,6 +330,22 @@ export const missionsService = {
                 }, { onConflict: 'user_id, mission_id' });
 
             if (updateError) throw updateError;
+
+            // Verificar que la misión se haya marcado como completada en la base de datos
+            const { data: verifyData, error: verifyError } = await supabase
+                .from('user_missions')
+                .select('completed')
+                .eq('user_id', userId)
+                .eq('mission_id', missionId)
+                .maybeSingle();
+
+            if (verifyError) {
+                throw verifyError;
+            }
+
+            if (!verifyData || !verifyData.completed) {
+                throw new Error(`Verificación de actualización de misión ${missionId} falló: el campo completed no es true`);
+            }
 
             // Actualizar balance del usuario en Supabase
             try {

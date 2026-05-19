@@ -886,9 +886,23 @@ const app = {
                     this.showToast('Esta misión ya estaba completada.', 'info');
                 }
 
+                // Guardar el estado de misiones completadas antes de recargar
+                const previouslyCompletedMissionIds = this.state.missions
+                    .filter(m => m.completed)
+                    .map(m => m.id);
+
                 // Recargar misiones desde Supabase
                 this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
-                // Ensure the mission is marked as completed in the reloaded data
+
+                // Asegurar que las misiones que previamente estaban completadas sigan estando completadas
+                this.state.missions = this.state.missions.map(mission => {
+                    if (previouslyCompletedMissionIds.includes(mission.id)) {
+                        return { ...mission, completed: true };
+                    }
+                    return mission;
+                });
+
+                // Además, asegurar que la misión actual esté marcada como completada (por si acaso)
                 const missionIndex = this.state.missions.findIndex(m => m.id === this.state.currentMission.id);
                 if (missionIndex !== -1) {
                     this.state.missions[missionIndex].completed = true;
@@ -956,16 +970,29 @@ const app = {
                 mission.completed = true;
                 this.state.balance += result.reward;
                 await authService.updateBalance(this.state.currentUserId, this.state.balance);
-                
+
+                // Guardar el estado de misiones completadas antes de recargar
+                const previouslyCompletedMissionIds = this.state.missions
+                    .filter(m => m.completed)
+                    .map(m => m.id);
+
                 this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
-                
+
+                // Asegurar que las misiones que previamente estaban completadas sigan estando completadas
+                this.state.missions = this.state.missions.map(mission => {
+                    if (previouslyCompletedMissionIds.includes(mission.id)) {
+                        return { ...mission, completed: true };
+                    }
+                    return mission;
+                });
+
                 this.showToast(`¡Misión desbloqueada: ${mission.title}! +$${result.reward}`, 'success');
-                
+
                 this.updateUI();
                 if (document.getElementById('missions-screen').classList.contains('active')) {
                     this.renderMissions();
                 }
-                
+
                 await this.checkAchievements();
             }
         }
