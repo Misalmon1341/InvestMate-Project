@@ -888,9 +888,14 @@ const app = {
 
                 // Recargar misiones desde Supabase
                 this.state.missions = await missionsService.getUserMissions(this.state.currentUserId);
+                // Ensure the mission is marked as completed in the reloaded data
+                const missionIndex = this.state.missions.findIndex(m => m.id === this.state.currentMission.id);
+                if (missionIndex !== -1) {
+                    this.state.missions[missionIndex].completed = true;
+                }
 
                 this.closeModal();
-                
+
                 // Actualizar balance e interfaz completa
                 this.updateUI();
                 this.renderMissions();
